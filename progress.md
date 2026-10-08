@@ -121,7 +121,7 @@ sh scripts/check_compat.sh                                            # macOS/Li
 | T7 | 有界学习器 | P1 | S–M | ✅ | 2026-10-08，`agents/learning.py`，权重限制在 0.10–0.50 |
 | T8 | 提示词注入防护 + 恶意卖家 | P1 | S–M | ✅ | 2026-10-08，`sig-injector` + 工具拒绝跳过验收；未花真实 LLM 费用 |
 | T9 | 事后结果核验 | P1 | M | ✅ | 2026-10-08，`economy/outcomes.py`；演示仍用过去的 `as_of` |
-| T10 | 人工复核关卡 | P1 | M | ⬜ | 运营令牌复用 T1 / 重置演示的令牌 |
+| T10 | 人工复核关卡 | P1 | M | ✅ | 2026-10-08，`review_queue` + 数据质量页；令牌复用重置演示 |
 | T11 | 支付通道接口（场景二） | P2 | M–L | ⬜ | Stripe 测试 key 或 x402 测试网 |
 | T12 | 价格协商 | P2 | M | ⬜ | — |
 | T13 | LLM 卖方 | P2 | M | ⬜ | 可选 |
@@ -317,4 +317,5 @@ sh scripts/check_compat.sh                                            # macOS/Li
 | 2026-10-08 | `57841a1` | 完成 T21（启动即给买方充值 $30）、T1（能力开关，关闭 A4）、T23（每日 AI 预算降级、运行令牌、同 IP 每分钟一轮）、T4（outbox 哈希链 + 数据质量页校验）。新增 R19–R21。网页与文档改为英文，`progress.md` 仍为中文。未花 API 费用。 |
 | 2026-10-08 | `fee6e62` | 完成 T2（买方密钥 + 清算所 `/fetch` 归档，关闭 A1/A2/A3）和 T3（Attack lab，9 个场景全部被拦）。`DisputeRequest.deliverable` 改为可选。未花 API 费用。 |
 | 2026-10-08 | `fec949b` | 完成 T7（买方价格权重有界学习，`policy.learned`）和 T8（`sig-injector` 注入卖家；工具结果当数据；跳过验收会被拒绝并最终全额退款）。Attack lab 增加 T8 场景。未花 API 费用。 |
-| 2026-10-08 | 本次提交 | 完成 T9：成交的信号在 5 个交易日之后用 `load_prices(..., as_of=today)` 核验真实方向，写入 `signal.verified` 和独立的已核验信誉；未到期不核验，同一订单只核验一次。智能体页增加「真实命中率」。未花 API 费用。 |
+| 2026-10-08 | `2a389e7` | 完成 T9：成交的信号在 5 个交易日之后用 `load_prices(..., as_of=today)` 核验真实方向，写入 `signal.verified` 和独立的已核验信誉；未到期不核验，同一订单只核验一次。智能体页增加「真实命中率」。未花 API 费用。 |
+| 2026-10-08 | 本次提交 | 完成 T10：退款比例在区间边缘、买方被驳回超过 2 次、或金额超过 `AL_CAP_HUMAN_REVIEW_ABOVE_MINOR` 时订单停在 DISPUTED，等运营令牌裁决。越界裁决不动钱。数据质量页有待复核面板。未花 API 费用。 |

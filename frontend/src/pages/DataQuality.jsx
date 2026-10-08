@@ -5,6 +5,7 @@ import CheckList from '../components/CheckList'
 import EventFeed from '../components/EventFeed'
 import PageState from '../components/PageState'
 import PipelineLineage from '../components/PipelineLineage'
+import ReviewQueue from '../components/ReviewQueue'
 import { useT } from '../i18n.jsx'
 import { usePageData } from '../usePageData'
 
@@ -47,6 +48,7 @@ export default function DataQuality() {
             </p>
           </section>
         )}
+        <ReviewQueue />
         <PipelineLineage />
         <EventFeed />
       </div>

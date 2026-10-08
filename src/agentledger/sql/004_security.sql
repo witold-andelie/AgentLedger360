@@ -51,6 +51,18 @@ CREATE TABLE IF NOT EXISTS seller_verified (
     reputation  REAL NOT NULL DEFAULT 0.5
 );
 
+-- A disputed order waits here until an operator decides. Money does not move while decided_at is null.
+CREATE TABLE IF NOT EXISTS review_queue (
+    order_id      TEXT PRIMARY KEY REFERENCES orders(order_id),
+    reason        TEXT NOT NULL,
+    proposal_json TEXT NOT NULL,
+    created_at    TEXT NOT NULL,
+    decided_by    TEXT,
+    decided_at    TEXT,
+    decision      TEXT,
+    rationale     TEXT
+);
+
 CREATE TABLE IF NOT EXISTS audit_chain (
     seq        INTEGER PRIMARY KEY REFERENCES outbox(seq),
     prev_hash  TEXT NOT NULL,

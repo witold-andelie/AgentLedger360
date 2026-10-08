@@ -50,3 +50,5 @@ services:
         value: "0"
       - key: AL_CAP_MAX_ORDER_MINOR
         value: "500"
+      - key: AL_CAP_HUMAN_REVIEW_ABOVE_MINOR
+        value: "50000"

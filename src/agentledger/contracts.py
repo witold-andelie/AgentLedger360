@@ -198,6 +198,7 @@ class DisputeOutcome(BaseModel):
     llm_summary: str | None = None
     ruling_source: str = "rule-table"
     guardian_run_id: str | None = None
+    pending_review: bool = False
 
 
 # ---------------------------------------------------------------- AI agent telemetry

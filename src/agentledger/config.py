@@ -24,6 +24,7 @@ class Settings:
     daily_ai_budget_usd: float   # past this, a round degrades to the rule agent (AL_DAILY_AI_BUDGET_USD)
     run_token: str | None         # if set, starting a round requires header X-Run-Token
     round_min_interval_seconds: int  # minimum gap between rounds from the same IP; 0 disables the limit
+    human_review_above_minor: int    # orders above this wait for a person (AL_CAP_HUMAN_REVIEW_ABOVE_MINOR)
     # ---- AI agents (agents/llm.py, agents/graph.py) ----
     agent_mode: str          # auto (LLM if a key is configured) | llm | rule (deterministic fallback)
     llm_provider: str        # mistral | anthropic | openai_compat (DeepSeek, OpenRouter, vLLM, ...)
@@ -62,6 +63,7 @@ def load_settings() -> Settings:
         daily_ai_budget_usd=float(os.getenv("AL_DAILY_AI_BUDGET_USD", "2.00")),
         run_token=os.getenv("AL_RUN_TOKEN") or None,
         round_min_interval_seconds=int(os.getenv("AL_ROUND_MIN_INTERVAL_SECONDS", "60")),
+        human_review_above_minor=int(os.getenv("AL_CAP_HUMAN_REVIEW_ABOVE_MINOR", "50000")),
         agent_mode=os.getenv("AL_AGENT_MODE", "auto"),
         llm_provider=os.getenv("AL_LLM_PROVIDER", "mistral"),
         llm_model=os.getenv("AL_LLM_MODEL", ""),

@@ -239,7 +239,7 @@ class BuyerToolkit:
             if r.status_code != 200:
                 return f"error: {r.json().get('detail', r.text)}"
             p.dispute = DisputeOutcome.model_validate(r.json())
-            p.status = p.dispute.decision.value
+            p.status = "DISPUTED" if p.dispute.pending_review else p.dispute.decision.value
             return as_json({"order_id": order_id, "decision": p.dispute.decision,
                             "refund_usd": kit._usd(p.dispute.refund_minor), "rationale": p.dispute.rationale,
                             "ruled_by": p.dispute.ruling_source})

@@ -7,6 +7,7 @@ through escrow.settle / escrow.refund (rule R1).
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from dataclasses import dataclass
 from datetime import date
@@ -143,6 +144,89 @@ def open_and_resolve(conn: sqlite3.Connection, req: DisputeRequest, fee_bps: int
         else:
             rationale = f"{band.reason} (guardian proposal rejected: {problem})"
 
+    held = review_reason(conn, order, band, pct)
+    if held:
+        _enqueue(conn, req, order, report, band, pct, fee_bps, held)
+        return DisputeOutcome(
+            dispute_id="pending", order_id=req.order_id, decision=band.decision, refund_minor=0,
+            rationale=held, evidence=report, llm_summary=summary, ruling_source=source,
+            guardian_run_id=guardian_run_id, pending_review=True,
+        )
+    return _finish(conn, req, order, report, band, pct, fee_bps, rationale, source, summary, guardian_run_id)
+
+
+def review_reason(conn: sqlite3.Connection, order: sqlite3.Row, band: PolicyBand, pct: int) -> str | None:
+    """Why this ruling must wait for a person. None means the clearing house may move the money now."""
+    reasons: list[str] = []
+    if band.min_pct < band.max_pct and pct in (band.min_pct, band.max_pct):
+        reasons.append("refund percentage is at the edge of the policy band")
+    rejected = conn.execute(
+        "SELECT COUNT(*) FROM disputes d JOIN orders o ON o.order_id = d.order_id"
+        " WHERE o.buyer_agent_id = ? AND d.decision = 'RELEASE'",
+        (order["buyer_agent_id"],),
+    ).fetchone()[0]
+    if rejected > 2:
+        reasons.append("buyer has more than two rejected disputes")
+    limit = int(os.getenv("AL_CAP_HUMAN_REVIEW_ABOVE_MINOR", "50000"))
+    if int(order["amount_minor"]) > limit:
+        reasons.append("order amount exceeds the human-review threshold")
+    return "; ".join(reasons) or None
+
+
+def _enqueue(conn: sqlite3.Connection, req: DisputeRequest, order: sqlite3.Row, report: QualityReport,
+             band: PolicyBand, pct: int, fee_bps: int, reason: str) -> None:
+    proposal = {
+        "queue_reason": reason, "decision": str(band.decision), "min_pct": band.min_pct, "max_pct": band.max_pct,
+        "default_pct": band.default_pct, "failed_checks": list(band.failed_checks), "proposed_pct": pct,
+        "fee_bps": fee_bps, "report": report.model_dump(mode="json"), "reason": req.reason,
+        "buyer_agent_id": order["buyer_agent_id"],
+    }
+    conn.execute(
+        "INSERT INTO review_queue (order_id, reason, proposal_json, created_at) VALUES (?,?,?,?)",
+        (req.order_id, reason, json.dumps(proposal), now_iso()),
+    )
+
+
+def decide_review(conn: sqlite3.Connection, order_id: str, ruling: GuardianRuling,
+                  human_id: str, rationale: str) -> DisputeOutcome:
+    """Execute a queued dispute. The human ruling must sit inside the stored policy band."""
+    queued = conn.execute(
+        "SELECT * FROM review_queue WHERE order_id = ? AND decided_at IS NULL", (order_id,),
+    ).fetchone()
+    if queued is None:
+        raise DomainError(f"no pending review for {order_id}", 404)
+    if not human_id.strip() or not rationale.strip():
+        raise DomainError("human_id and rationale are required", 422)
+    proposal = json.loads(queued["proposal_json"])
+    band = PolicyBand(
+        decision=DisputeDecision(proposal["decision"]), min_pct=proposal["min_pct"], max_pct=proposal["max_pct"],
+        default_pct=proposal["default_pct"], reason=proposal["queue_reason"],
+        failed_checks=tuple(proposal["failed_checks"]),
+    )
+    submitted = ruling.model_copy(update={"rationale": rationale, "source": "human"})
+    problem = validate(submitted, band)
+    if problem:
+        raise DomainError(problem, 422)
+    order = escrow.get_order(conn, order_id)
+    if order["status"] != OrderStatus.DISPUTED:
+        raise DomainError(f"order {order_id} is {order['status']}, only DISPUTED can be decided", 409)
+    report = QualityReport.model_validate(proposal["report"])
+    req = DisputeRequest(order_id=order_id, reason=proposal["reason"])
+    pct = submitted.refund_pct
+    outcome = _finish(
+        conn, req, order, report, band, pct, int(proposal["fee_bps"]), rationale, "human", None, None,
+        human_id=human_id,
+    )
+    conn.execute(
+        "UPDATE review_queue SET decided_by = ?, decided_at = ?, decision = ?, rationale = ? WHERE order_id = ?",
+        (human_id, now_iso(), str(band.decision), rationale, order_id),
+    )
+    return outcome
+
+
+def _finish(conn: sqlite3.Connection, req: DisputeRequest, order: sqlite3.Row, report: QualityReport,
+            band: PolicyBand, pct: int, fee_bps: int, rationale: str, source: str, summary: str | None,
+            guardian_run_id: str | None, human_id: str | None = None) -> DisputeOutcome:
     refund = refund_for(order["amount_minor"], pct)
     if band.decision is DisputeDecision.RELEASE:
         escrow.settle(conn, req.order_id, report, fee_bps)
@@ -157,11 +241,14 @@ def open_and_resolve(conn: sqlite3.Connection, req: DisputeRequest, fee_bps: int
         (dispute_id, req.order_id, req.reason, report.model_dump_json(), report.evidence_hash, str(band.decision),
          refund, rationale, summary, ts, ts),
     )
-    emit_event(conn, EventType.DISPUTE_RESOLVED, req.order_id,
-               {"order_id": req.order_id, "dispute_id": dispute_id, "decision": str(band.decision),
-                "refund_minor": refund, "refund_pct": pct, "rationale": rationale, "ruling_source": source,
-                "guardian_run_id": guardian_run_id,
-                "failed_checks": json.dumps(list(band.failed_checks))})
-    return DisputeOutcome(dispute_id=dispute_id, order_id=req.order_id, decision=band.decision, refund_minor=refund,
-                          rationale=rationale, evidence=report, llm_summary=summary, ruling_source=source,
-                          guardian_run_id=guardian_run_id)
+    emit_event(conn, EventType.DISPUTE_RESOLVED, req.order_id, {
+        "order_id": req.order_id, "dispute_id": dispute_id, "decision": str(band.decision),
+        "refund_minor": refund, "refund_pct": pct, "rationale": rationale, "ruling_source": source,
+        "guardian_run_id": guardian_run_id, "human_id": human_id,
+        "failed_checks": json.dumps(list(band.failed_checks)),
+    })
+    return DisputeOutcome(
+        dispute_id=dispute_id, order_id=req.order_id, decision=band.decision, refund_minor=refund,
+        rationale=rationale, evidence=report, llm_summary=summary, ruling_source=source,
+        guardian_run_id=guardian_run_id,
+    )

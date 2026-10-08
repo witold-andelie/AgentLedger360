@@ -127,5 +127,5 @@ class BuyerAgent:
                 order_id=p.order_id, reason=f"acceptance checks failed: {failed}", deliverable=deliverable,
             ).model_dump(mode="json"))
             p.dispute = DisputeOutcome.model_validate(r.json())
-            p.status = p.dispute.decision.value
+            p.status = "DISPUTED" if p.dispute.pending_review else p.dispute.decision.value
         return p

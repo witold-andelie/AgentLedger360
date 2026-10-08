@@ -68,6 +68,17 @@ export const api = {
 
   /** POST /api/attacks/run -> [{ id, title, blocked, rule, http_status, detail }] */
   runAttacks: () => request('/api/attacks/run', { method: 'POST' }),
+
+  /** GET /api/reviews -> pending human reviews */
+  reviews: () => request('/api/reviews'),
+
+  /** POST /api/reviews/{orderId}/decide. Needs X-Admin-Token when the server has one. */
+  decideReview: (orderId, body, token = null) =>
+    request(`/api/reviews/${encodeURIComponent(orderId)}/decide`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(token ? { 'X-Admin-Token': token } : {}) },
+      body: JSON.stringify(body),
+    }),
 }
 
 export const fmt = {

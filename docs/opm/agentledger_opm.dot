@@ -333,10 +333,12 @@ digraph AgentLedger360_OPM {
     q7 [shape=ellipse, color="#1565C0", label=<12.7 Updating Reputation<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">registry.record_outcome</FONT>>];
     q8 [shape=ellipse, color="#1565C0", label=<12.3b Guardian Investigating (LLM)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">guardian.investigate: 7 read-only tools</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R1 R17 R18]</FONT>>];
     q9 [shape=ellipse, color="#1565C0", label=<12.9 Recording<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">INSERT disputes, emit_event</FONT>>];
+    q10 [shape=ellipse, color="#1565C0", label=<12.8 Human Reviewing<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">POST /api/reviews/{id}/decide</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R1]</FONT>>];
+    sd2_human [shape=box, color="#2E7D32", style=dashed, label=<Operator (human)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">agent link: decides inside the policy band</FONT>>];
 
     q1 -> q2 -> q3 -> q8 -> q4 [style=invis, weight=20];
     {rank=same; q5; q6;}
-    q4 -> q5 [style=invis]; q4 -> q6 [style=invis];
+    q4 -> q5 [style=invis]; q4 -> q6 [style=invis]; q4 -> q10 [style=invis];
     q5 -> q7 [style=invis]; q7 -> q9 [style=invis];
 
     sd2_order:delivered -> q1;
@@ -355,6 +357,10 @@ digraph AgentLedger360_OPM {
     sd2_decision:partial -> q5 [arrowhead=odot, label="c"];
     sd2_decision:full -> q5 [arrowhead=odot, label="c"];
     sd2_decision:release -> q6 [arrowhead=odot, label="c"];
+    q4 -> q10 [label="c: edge, repeat loser, or large order"];
+    sd2_human -> q10 [arrowhead=odot];
+    q10 -> q5 [label="c: human ruling"];
+    q10 -> q6 [label="c: human ruling"];
     sd2_order:disputed -> q5;
     sd2_order:disputed -> q6;
     q5 -> sd2_order:refunded;

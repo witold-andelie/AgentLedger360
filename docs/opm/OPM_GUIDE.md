@@ -157,6 +157,7 @@ In an in-zoomed diagram, processes **from top to bottom = time order** (the orde
 | Holding / Delivering / Recording Delivery / Settling | process | `escrow.hold`, clearing-house `POST /orders/{id}/fetch` (archives rows), `escrow.mark_delivered`, `escrow.settle`, `platform_api.py` | A |
 | Expiring | process | `escrow.expire_undelivered` | A |
 | Resolving Dispute (SD2) | process | `economy/disputes.py` (`policy_band` / `validate`) | A |
+| Human Reviewing (SD2) | process | `disputes.decide_review`, `POST /api/reviews/{order_id}/decide` | A |
 | Guardian Investigating (SD2) | process | `agents/guardian.py` | A |
 | Buyer Agent brain (SD1 → SD5) | object | `agents/buyer_agent.py` (7 tools + tool-side policy) | A |
 | Planning / Acting / Reflecting (SD5) | process | `agents/graph.py` (LangGraph) | A |

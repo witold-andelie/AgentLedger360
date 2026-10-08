@@ -13,6 +13,7 @@ The frontend API contract is documented in docs/FRONTEND_RULES.md; change both t
 from __future__ import annotations
 
 import hmac
+import json
 import logging
 import secrets
 import sqlite3
@@ -29,13 +30,22 @@ from agentledger.agents import accounting, llm, telemetry
 from agentledger.analytics import pipeline
 from agentledger.attacks import run_scenarios
 from agentledger.config import Settings, load_settings
+from agentledger.contracts import DisputeDecision, GuardianRuling
 from agentledger.db import connect, transaction, verify_audit_chain, wipe_all
-from agentledger.economy import ledger
+from agentledger.economy import DomainError, disputes, ledger
 from agentledger.governance import Capabilities, CapabilityGate
 from agentledger.runner import BUYER, Market, run_summary, summarize
 from agentledger.sellers.app import create_app as seller_app
 
 log = logging.getLogger(__name__)
+
+
+class ReviewDecision(BaseModel):
+    human_id: str
+    rationale: str
+    decision: str
+    refund_pct: int = Field(ge=0, le=100)
+    cited_checks: list[str] = Field(default_factory=list)
 
 
 class RoundRequest(BaseModel):
@@ -185,6 +195,46 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def attacks_run() -> list[dict[str, Any]]:
         """Run the attack lab against a throwaway database. Does not spend LLM credit or touch the demo."""
         return run_scenarios(s)
+
+    @app.get("/api/reviews")
+    def reviews() -> list[dict[str, Any]]:
+        conn = connect(s)
+        try:
+            rows = conn.execute(
+                "SELECT order_id, reason, proposal_json, created_at FROM review_queue"
+                " WHERE decided_at IS NULL ORDER BY created_at"
+            ).fetchall()
+        finally:
+            conn.close()
+        out = []
+        for row in rows:
+            proposal = json.loads(row["proposal_json"])
+            out.append({
+                "order_id": row["order_id"], "reason": row["reason"], "created_at": row["created_at"],
+                "decision": proposal["decision"], "min_pct": proposal["min_pct"], "max_pct": proposal["max_pct"],
+                "proposed_pct": proposal["proposed_pct"], "failed_checks": proposal["failed_checks"],
+            })
+        return out
+
+    @app.post("/api/reviews/{order_id}/decide")
+    def decide_review(order_id: str, body: ReviewDecision,
+                      x_admin_token: str | None = Header(default=None)) -> dict[str, Any]:
+        require_admin(x_admin_token)
+        ruling = GuardianRuling(
+            decision=DisputeDecision(body.decision), refund_pct=body.refund_pct,
+            rationale=body.rationale, cited_checks=body.cited_checks, source="human",
+        )
+        conn = connect(s)
+        try:
+            with transaction(conn):
+                try:
+                    outcome = disputes.decide_review(conn, order_id, ruling, body.human_id, body.rationale)
+                except DomainError as exc:
+                    raise HTTPException(exc.status, str(exc)) from exc
+        finally:
+            conn.close()
+        return {"order_id": outcome.order_id, "decision": outcome.decision.value,
+                "refund_minor": outcome.refund_minor, "pending_review": outcome.pending_review}
 
     @app.get("/api/audit/verify")
     def audit_verify() -> dict[str, bool | int | None]:
