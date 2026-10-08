@@ -1,99 +1,99 @@
-# 半天黑客松作战计划（两台电脑）
+# Half-day hackathon plan (two laptops)
 
-## 1. 一句话
-**AI 智能体在市场里互相买卖“市场情报”**：买方 agent 通过 agent card 发现卖方 → HTTP 402 报价 → 托管付款 →
-收到数据后按合同自动验收 → 结算或发起争议，由确定性仲裁重跑验收决定退款 → 信誉更新 → 所有事件进入数仓，
-产出 Customer 360、agent 可靠性和数据质量报表。
+## 1. One sentence
+**AI agents buy and sell "market intelligence" from each other in a marketplace**: the buyer agent discovers sellers through an agent card → HTTP 402 quote → escrow payment →
+after the data arrives, acceptance runs automatically against the contract → settlement, or a dispute in which deterministic arbitration re-runs acceptance and decides the refund → reputation update → every event lands in the warehouse,
+which produces Customer 360, agent reliability, and data-quality reports.
 
-| 评审要求（Case 02） | 我们的实现 |
+| Review requirement (Case 02) | Our implementation |
 |---|---|
-| Agent-to-agent discovery | `/.well-known/agents.json` agent card + 注册中心按 信誉−价格 排名 |
-| Payments | HTTP 402 报价 → 托管 → HMAC 收据作为 `X-Payment` 头 → 交付 |
-| Wallets | 双分录账本、每个 agent 一个钱包、支出授权（单笔/日限额）、生存等级 |
-| Dispute resolution | 仲裁者重算哈希 + 重跑验收；规则表决定全额/部分退款/驳回 |
-| “不止于此” | 信誉随结果变化、事件溯源数仓、9 项数据质量与对账、LLM 只解释不动钱 |
+| Agent-to-agent discovery | `/.well-known/agents.json` agent card + a registry ranked by reputation − price |
+| Payments | HTTP 402 quote → escrow → HMAC receipt as the `X-Payment` header → delivery |
+| Wallets | Double-entry ledger, one wallet per agent, spend authorization (per-transaction / daily limits), survival tiers |
+| Dispute resolution | The arbiter recomputes the hash and re-runs acceptance; a rule table decides full refund / partial refund / rejection |
+| "And more" | Reputation moves with outcomes, an event-sourced warehouse, 9 data-quality and reconciliation checks, and the LLM only explains — it never moves money |
 
-## 2. 相对原提纲的取舍（半天版）
+## 2. Trade-offs versus the original outline (half-day version)
 
-| 原提纲（2 天） | 半天版 | 理由 |
+| Original outline (2 days) | Half-day version | Reason |
 |---|---|---|
-| PostgreSQL | SQLite（core.db + attach analytics.db） | 零安装；两个 schema 的 OLTP/OLAP 分层保留 |
-| Kafka | outbox 表 + 游标轮询（同样的契约） | 演示稳定；面试时讲“可 1:1 换成 Kafka consumer” |
-| Airflow | `analytics/pipeline.py` 拓扑 DAG + 运行日志 | 同样有任务依赖、幂等、失败传播 |
-| LangGraph | 普通 Python 状态机 + 可选 Claude | 学习成本为零；LLM 只解释（R1） |
-| CSV 清洗服务 | 股票信号/特征/行情服务（zoomcamp） | 验收可以量化（命中率、Rank IC），争议有客观依据 |
-| Streamlit | React + Vite 前端，FastAPI 托管，部署 Render | 与你 EuroGoal 项目同一套路，可直接复用经验 |
-| K8s | 不做 | Render Blueprint 足够 |
+| PostgreSQL | SQLite (core.db + attach analytics.db) | Zero install; the OLTP/OLAP split across two schemas is kept |
+| Kafka | outbox table + cursor polling (same contract) | Stable for the demo; in an interview, say it "can be swapped 1:1 for a Kafka consumer" |
+| Airflow | `analytics/pipeline.py` topological DAG + run log | Same task dependencies, idempotency, and failure propagation |
+| LangGraph | Plain Python state machine + optional Claude | Zero learning cost; the LLM only explains (R1) |
+| CSV cleaning service | Stock signal / feature / quote services (zoomcamp) | Acceptance is quantifiable (hit rate, Rank IC), so disputes have an objective basis |
+| Streamlit | React + Vite frontend, served by FastAPI, deployed on Render | Same pattern as your EuroGoal project; that experience transfers directly |
+| K8s | Not doing it | A Render Blueprint is enough |
 
-## 3. 分工（以 OPM SD4 为准）
+## 3. Split of work (per OPM SD4)
 
-| | Dev A / 笔记本 A | Dev B / 笔记本 B |
+| | Dev A / Laptop A | Dev B / Laptop B |
 |---|---|---|
-| Python | **3.11**（`.venv311`） | **3.13**（`.venv313`） |
-| 负责 | `economy/` `agents/` `platform_api.py` `runner.py` `server.py` `sellers/app.py` `Dockerfile` `render.yaml` | `market/` `sellers/catalog.py` `analytics/` `sql/marts` `sql/quality_checks.sql` `sql/002_analytics.sql` `frontend/` |
-| 共同 | `contracts.py`、`sql/001_core.sql`、`docs/opm/*`（R15：两人一起改） | 同左 |
+| Python | **3.11** (`.venv311`) | **3.13** (`.venv313`) |
+| Owns | `economy/` `agents/` `platform_api.py` `runner.py` `server.py` `sellers/app.py` `Dockerfile` `render.yaml` | `market/` `sellers/catalog.py` `analytics/` `sql/marts` `sql/quality_checks.sql` `sql/002_analytics.sql` `frontend/` |
+| Shared | `contracts.py`, `sql/001_core.sql`, `docs/opm/*` (R15: both people change these together) | same as left |
 
-两台机器用不同 Python 版本，**每次合并天然就做了一次 3.11/3.13 兼容测试**。
+The two machines run different Python versions, so **every merge is naturally a 3.11/3.13 compatibility test**.
 
-## 4. 时间表（约 5.5 小时）
+## 4. Schedule (about 5.5 hours)
 
-| 时间 | A | B |
+| Time | A | B |
 |---|---|---|
-| 0:00–0:30 | 一起：建 GitHub 私有仓库、两台机器跑通 `check_compat`、通读 OPM、确认契约冻结 | 同左 |
-| 0:30–2:00 | 托管超时退款（CANCELLED）、卖方签名交付、Render 首次部署 | 前端 Market 页（按 FRONTEND_RULES）、信号调参 |
-| 2:00–2:30 | 联调：前端 ↔ `/api/round`，双机模式（B 跑 sellers） | 同左 |
-| 2:30–4:00 | 可选：价格协商、LLM 解释开关 | Agents / Customer360 / DataQuality 页 |
-| 4:00–4:45 | Render 部署（单服务）、预热、录屏备份 | 截图、README 数字、OPM 图放进 slides |
-| 4:45–5:30 | 彩排 3 分钟 demo + 面试话术 | 同左 |
+| 0:00–0:30 | Together: create a private GitHub repo, get `check_compat` green on both machines, read through the OPM, confirm the contract freeze | same as left |
+| 0:30–2:00 | Escrow timeout refund (CANCELLED), seller-signed delivery, first Render deploy | Frontend Market page (per FRONTEND_RULES), signal tuning |
+| 2:00–2:30 | Integration: frontend ↔ `/api/round`, two-machine mode (B runs sellers) | same as left |
+| 2:30–4:00 | Optional: price negotiation, LLM explanation switch | Agents / Customer360 / DataQuality pages |
+| 4:00–4:45 | Render deploy (single service), warm-up, screen-recording backup | Screenshots, README numbers, OPM diagram into the slides |
+| 4:45–5:30 | Rehearse the 3-minute demo + interview talking points | same as left |
 
-**砍需求顺序**（时间不够时从上往下砍）：价格协商 → LLM → 双机/双服务模式 → 卖方签名 → 超时退款 → 前端第 2–4 页。
-**永远不砍**：Market 页演示、争议退款、对账与 DQ 全绿、3.11/3.13 双绿。
+**Cut order** (when time runs short, cut from the top down): price negotiation → LLM → two-machine / two-service mode → seller signatures → timeout refund → frontend pages 2–4.
+**Never cut**: the Market page demo, dispute refunds, reconciliation and DQ all green, and 3.11/3.13 both green.
 
-## 5. Git 规则
-- `main` 永远可演示；各自分支 `a/*`、`b/*`，**每小时合并一次**，合并前跑 `scripts/check_compat.*`。
-- `AgentLedger360_Case02_Architecture_Python311_313.md` 只在本地（已在 `.gitignore` / `.dockerignore`）。
-- 改契约/状态/事件 → 同一个提交里更新 `docs/opm/agentledger_opm.dot` + `OPM_GUIDE.md` 并重新渲染。
+## 5. Git rules
+- `main` is always demoable; personal branches are `a/*` and `b/*`, **merge once an hour**, and run `scripts/check_compat.*` before each merge.
+- `AgentLedger360_Case02_Architecture_Python311_313.md` stays local only (already in `.gitignore` / `.dockerignore`).
+- A change to a contract, state, or event → in the same commit, update `docs/opm/agentledger_opm.dot` + `OPM_GUIDE.md` and re-render.
 
-## 6. 3 分钟演示脚本
-1. （20s）问题：agent 之间要交易数据/服务，需要发现、付款、验收、纠纷处理，而且要可审计。
-2. （60s）Market 页点 “Run market round”：最便宜的 `sig-hype` 被选中 → 数据过期 → **全额退款**；
-   `sig-rsi` 表现不达标 → **50% 退款**；`sig-momentum` → **成交**。再点一次：hype 信誉下降，不再被选中。
-3. （40s）Agents 页：信誉、成功率、延迟（= IT 运维分析）；Customer 360 + RFM（= SAP CPIT Customer 360）。
-4. （30s）Data quality 页：9 项检查全绿、托管余额 = 未结订单（对账）、事件流可重放。
-5. （30s）OPM 图一张：LLM 只解释不动钱（R1），状态变更与事件同事务（R3），3.11/3.13 双绿。
+## 6. 3-minute demo script
+1. (20s) The problem: agents that trade data and services need discovery, payment, acceptance, and dispute handling, and the whole path must be auditable.
+2. (60s) On the Market page, click "Run market round": the cheapest `sig-hype` is selected → the data is stale → **full refund**;
+   `sig-rsi` misses its performance bar → **50% refund**; `sig-momentum` → **settled**. Click again: hype's reputation has dropped, so it is no longer selected.
+3. (40s) Agents page: reputation, success rate, and latency (= IT operations analytics); Customer 360 + RFM (= SAP CPIT Customer 360).
+4. (30s) Data quality page: all 9 checks green, escrow balance = open orders (reconciliation), and the event stream is replayable.
+5. (30s) One OPM diagram: the LLM only explains and never moves money (R1), a state change and its event share one transaction (R3), and 3.11/3.13 are both green.
 
-## 7. 和 SAP iXp（IT Data & Analytics, CPIT, Customer 360 / BDC）的对应
-- **SQL（必备）**：窗口函数（最新状态、RFM 的 NTILE）、CTE、对账查询、DQ 检查都是手写 SQL。
-- **数据管道**：outbox → raw_events（去重、游标）→ dim/fact → KPI 视图；幂等重建；运行日志。
-- **Customer 360**：`v_customer_360` + `v_customer_rfm`（复用你 golden_dragon_prague 的 RFM 写法）。
-- **云基础设施分析**：卖方延迟、成功率、争议率 = 服务可靠性指标。
-- **AI 原型**：agent 经济 + 可选 Claude，并且有治理边界（R1）。
-- **治理 / PO 支持**：OPM 模型、规则表 R1–R16、DoD、兼容门禁。
-- 措辞：只说“概念上对应 BDC 的 data product / 数据契约”，**不声称与任何 SAP 产品集成**。
+## 7. Mapping to SAP iXp (IT Data & Analytics, CPIT, Customer 360 / BDC)
+- **SQL (required)**: window functions (latest state, NTILE for RFM), CTEs, reconciliation queries, and DQ checks are all handwritten SQL.
+- **Data pipeline**: outbox → raw_events (dedupe, cursor) → dim/fact → KPI views; idempotent rebuild; run log.
+- **Customer 360**: `v_customer_360` + `v_customer_rfm` (reuse the RFM pattern from your golden_dragon_prague project).
+- **Cloud infrastructure analytics**: seller latency, success rate, and dispute rate = service reliability metrics.
+- **AI prototype**: an agent economy plus optional Claude, with a governance boundary (R1).
+- **Governance / PO support**: the OPM model, rule table R1–R16, the DoD, and the compatibility gate.
+- Wording: say only that this "conceptually corresponds to a BDC data product / data contract". **Do not claim integration with any SAP product**.
 
-## 8. 借鉴来源（已扫描你的 30 个仓库 + 97 个星标）
+## 8. Sources we borrowed from (your 30 repos and 97 stars, already scanned)
 
-| 来源 | 借鉴点 | 落地位置 |
+| Source | What we took | Where it landed |
 |---|---|---|
-| DataTalksClub/stock-markets-analytics-zoomcamp | M1 数据源、M2 特征（growth_Nd、RSI…）、M3 方向预测、M4 回测与手续费、M5 脚本化+SQLite+调度 | `market/*`、`analytics/pipeline.py` |
-| witold-andelie/stock_analysis_wentao（HW2） | RSI<30 超卖入场策略 | `signals.rsi_reversion`（卖方 sig-rsi） |
-| witold-andelie/golden_dragon_prague | RFM 分群（NTILE）、星型模型、DQ 过程、面试指南写法 | `v_customer_rfm`、本文第 7 节 |
-| witold-andelie/quant-alpha-foundation | IC / 稳健性诊断、合成数据回退、Bruin 拓扑执行、CI | `backtest.rank_ic`、`data.py`、`pipeline.py` |
-| witold-andelie/PerpPulse | 证据哈希、对账记分卡、as-of 截点、不夸大的验证记录 | `disputes.py`、`quality_checks.sql`、README “Honest limits” |
-| witold-andelie/revio | LLM 编排 + 确定性分析器，证据驱动结论 | R1：LLM 只解释，规则表裁决 |
-| EuroGoal（football match prediction） | React+Vite 前端、i18n、Docker 两阶段构建、Render Blueprint | `frontend/`、`Dockerfile`、`render.yaml` |
-| Conway-Research/automaton | 余额决定“生存等级”、钱包即身份、宪法式规则 | `buyer.TIERS`、规则表 |
-| HKUDS/AI-Trader | agent 读 SKILL.md 自助接入、信号发布与积分 | `/SKILL.md`、`/.well-known/agents.json` |
-| TauricResearch/TradingAgents | 分析师角色分工、point-in-time 防前视 | 卖方人设、`point_in_time` 检查 |
-| gplearn / GPLearnFinance3D / AlphaMaster | IC、IR、RankIC 因子评价 | 验收条款 `min_rank_ic` |
-| freqtrade | dry-run / 手续费建模 | `backtest.fee_bps` |
-| Coral-Protocol/AgentRadio | 共享频道被动感知 | 可选扩展：买方订阅 `reputation.updated` 事件 |
-| tt-a1i/archify、Recordly / openscreen | 架构图、录屏 | slides 与 demo 备份视频 |
+| DataTalksClub/stock-markets-analytics-zoomcamp | M1 data sources, M2 features (growth_Nd, RSI…), M3 direction prediction, M4 backtest and fees, M5 scripting + SQLite + scheduling | `market/*`, `analytics/pipeline.py` |
+| witold-andelie/stock_analysis_wentao (HW2) | RSI<30 oversold entry strategy | `signals.rsi_reversion` (seller sig-rsi) |
+| witold-andelie/golden_dragon_prague | RFM segmentation (NTILE), star schema, DQ process, interview-guide style | `v_customer_rfm`, section 7 of this document |
+| witold-andelie/quant-alpha-foundation | IC / robustness diagnostics, synthetic-data fallback, Bruin topological execution, CI | `backtest.rank_ic`, `data.py`, `pipeline.py` |
+| witold-andelie/PerpPulse | Evidence hashes, reconciliation scorecard, as-of cutoff, validation notes that do not overclaim | `disputes.py`, `quality_checks.sql`, README "Honest limits" |
+| witold-andelie/revio | LLM orchestration + a deterministic analyzer, evidence-driven conclusions | R1: the LLM only explains; the rule table decides |
+| EuroGoal (football match prediction) | React+Vite frontend, i18n, two-stage Docker build, Render Blueprint | `frontend/`, `Dockerfile`, `render.yaml` |
+| Conway-Research/automaton | Balance decides the "survival tier", the wallet is the identity, constitutional rules | `buyer.TIERS`, the rule table |
+| HKUDS/AI-Trader | An agent reads SKILL.md to onboard itself; signal publishing and points | `/SKILL.md`, `/.well-known/agents.json` |
+| TauricResearch/TradingAgents | Analyst role split, point-in-time to prevent look-ahead | Seller personas, the `point_in_time` check |
+| gplearn / GPLearnFinance3D / AlphaMaster | IC, IR, and RankIC factor evaluation | Acceptance clause `min_rank_ic` |
+| freqtrade | dry-run / fee modeling | `backtest.fee_bps` |
+| Coral-Protocol/AgentRadio | Passive awareness on a shared channel | Optional extension: the buyer subscribes to `reputation.updated` events |
+| tt-a1i/archify, Recordly / openscreen | Architecture diagrams, screen recording | slides and the demo backup video |
 
-## 9. 风险与预案
-| 风险 | 预案 |
+## 9. Risks and contingencies
+| Risk | Contingency |
 |---|---|
-| 会场网络差 / Render 休眠 | 本地 `python -m agentledger.demo` 与本地前端随时可演示；提前录屏 |
-| yfinance 限流 | 默认 synthetic（确定性、离线） |
-| 双机网络不通 | 单机 in-process 模式功能完全一致 |
-| LLM 无额度 | 默认 `AL_LLM=0`，所有路径确定性 |
+| Poor venue network / Render sleep | Local `python -m agentledger.demo` and the local frontend can demo at any time; record the screen in advance |
+| yfinance rate limits | Default to synthetic (deterministic, offline) |
+| The two machines cannot reach each other | Single-machine in-process mode is functionally identical |
+| No LLM quota | Default `AL_LLM=0`; every path is deterministic |

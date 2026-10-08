@@ -5,6 +5,7 @@ procurement agent (agents/buyer_agent.py); otherwise the deterministic rule buye
 
 from __future__ import annotations
 
+import secrets
 import threading
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
@@ -33,20 +34,30 @@ class Market:
         self.model: Any = None  # tests inject a scripted chat model here
         self.buyer = BuyerAgent(BUYER.agent_id, router, platform_url)
         self.last_run: AgentRunReport | None = None
+        self.operator_token = ""  # sent only by bootstrap; not returned by any API
         self._lock = threading.Lock()  # one round at a time
         self._ready = False
 
     @classmethod
     def in_process(cls, settings: Settings, platform: FastAPI | None = None,
-                   sellers: FastAPI | None = None) -> Market:
+                   sellers: FastAPI | None = None, operator_token: str = "",
+                   gate: Any = None) -> Market:
         """Platform always in-process; sellers in-process unless AL_SELLER_URL points at a remote service."""
+        from agentledger.governance import Capabilities, CapabilityGate
         from agentledger.platform_api import create_app as platform_app
         from agentledger.sellers.app import create_app as seller_app
 
+        token = operator_token or settings.admin_token or secrets.token_urlsafe(24)
+        if gate is None:
+            gate = CapabilityGate(Capabilities.from_env())
         router = Router()
-        platform_url = router.mount("platform", platform or platform_app(settings))
+        platform_url = router.mount(
+            "platform", platform or platform_app(settings, operator_token=token, gate=gate),
+        )
         seller_url = settings.seller_url or router.mount("sellers", sellers or seller_app(settings))
-        return cls(router, platform_url, seller_url.rstrip("/"), settings)
+        market = cls(router, platform_url, seller_url.rstrip("/"), settings)
+        market.operator_token = token
+        return market
 
     @contextmanager
     def exclusive(self) -> Iterator[None]:
@@ -67,19 +78,23 @@ class Market:
         cards = self.router.get(f"{self.seller_url}/.well-known/agents.json").json()
         for card in cards:
             self.router.post(f"{self.platform_url}/registry/sellers", json=card).raise_for_status()
-        self.router.post(f"{self.platform_url}/registry/buyers", json=BUYER.model_dump()).raise_for_status()
+        funded = self.router.post(
+            f"{self.platform_url}/registry/buyers", json=BUYER.model_dump(),
+            headers={"X-Admin-Token": self.operator_token},
+        )
+        funded.raise_for_status()
         self._ready = True
         return len(cards)
 
     def run_round(self, symbols: list[str], as_of: date | None = None,
-                  on_start: Callable[[str], None] | None = None) -> list[Purchase]:
+                  on_start: Callable[[str], None] | None = None, force_rule: bool = False) -> list[Purchase]:
         with self._lock:
             if not self._ready:
                 self.bootstrap()
             expired = self.router.post(f"{self.platform_url}/orders/expire")
             if expired.status_code != 200:
                 expired.raise_for_status()
-            if self.mode == "llm":
+            if self.mode == "llm" and not force_rule:
                 return self._llm_round(symbols, as_of, on_start)
             return [self.buyer.acquire(TaskSpec(capability=Capability.SIGNAL_5D, symbol=s.strip().upper(),
                                                 as_of=as_of))

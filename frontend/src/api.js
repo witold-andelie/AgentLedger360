@@ -2,11 +2,20 @@
 // Contract source of truth: src/agentledger/server.py (+ docs/FRONTEND_RULES.md section 3).
 // Money arrives as integer minor units (cents) -> format with fmt.usd(), never do float math on it.
 
+// Remembered only for this page load. Not written to localStorage.
+let sessionRunToken = ''
+
+export function rememberRunToken(token) {
+  sessionRunToken = token || ''
+}
+
 async function request(path, options = {}) {
-  const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  })
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(sessionRunToken ? { 'X-Run-Token': sessionRunToken } : {}),
+    ...(options.headers || {}),
+  }
+  const res = await fetch(path, { ...options, headers })
   const body = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(body.detail || `${res.status} ${res.statusText}`)
   return body
@@ -53,6 +62,9 @@ export const api = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(token ? { 'X-Admin-Token': token } : {}) },
     }),
+
+  /** GET /api/audit/verify -> { ok, first_bad_seq } */
+  auditVerify: () => request('/api/audit/verify'),
 }
 
 export const fmt = {

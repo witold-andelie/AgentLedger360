@@ -5,10 +5,11 @@ Run on laptop A:  uvicorn agentledger.platform_api:create_app --factory --host 0
 
 from __future__ import annotations
 
+import hmac
 import sqlite3
 from collections.abc import Iterator
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 
 from agentledger.agents import llm, telemetry
@@ -29,10 +30,19 @@ from agentledger.contracts import (
 )
 from agentledger.db import connect, init_db, transaction
 from agentledger.economy import DomainError, disputes, escrow, ledger, registry
+from agentledger.governance import Capabilities, CapabilityGate
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def _token_ok(expected: str, presented: str | None) -> bool:
+    if not expected or not presented or len(presented) != len(expected):
+        return False
+    return hmac.compare_digest(presented, expected)
+
+
+def create_app(settings: Settings | None = None, operator_token: str = "",
+               gate: CapabilityGate | None = None) -> FastAPI:
     s = settings or load_settings()
+    gate = gate or CapabilityGate(Capabilities.from_env())
     boot = connect(s)
     try:
         init_db(boot)
@@ -41,7 +51,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     finally:
         boot.close()
 
-    guardian_llm = llm.resolve_mode(s) == "llm"  # the guardian agent rules on disputes when a model is available
+    guardian_llm = llm.resolve_mode(s) == "llm" and gate.caps.llm_rulings
 
     app = FastAPI(title="AgentLedger clearing house")
 
@@ -72,12 +82,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {"agent_id": card.agent_id}
 
     @app.post("/registry/buyers")
-    def register_buyer(body: BuyerSignup, conn: sqlite3.Connection = Depends(get_conn)) -> dict[str, int | str]:
+    def register_buyer(body: BuyerSignup, x_admin_token: str | None = Header(default=None),
+                       conn: sqlite3.Connection = Depends(get_conn)) -> dict[str, int | str]:
         with transaction(conn):
             created = registry.register_buyer(conn, body.agent_id, body.name, body.owner,
                                               max_per_order_minor=body.max_per_order_minor,
                                               daily_limit_minor=body.daily_limit_minor)
             if created and body.initial_funding_minor:  # idempotent: re-signup never re-funds
+                gate.require_funding(body.initial_funding_minor, _token_ok(operator_token, x_admin_token))
                 ledger.fund(conn, body.agent_id, body.initial_funding_minor)
         return {"agent_id": body.agent_id, "balance_minor": ledger.balance(conn, ledger.wallet_id_for(body.agent_id))}
 
@@ -99,6 +111,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # ---------------------------------------------------------------- payment lifecycle
     @app.post("/escrow/hold")
     def hold(req: HoldRequest, conn: sqlite3.Connection = Depends(get_conn)) -> PaymentReceipt:
+        gate.require_hold(req.quote.amount_minor)
         with transaction(conn):
             return escrow.hold(conn, req, s.payment_secret)
 

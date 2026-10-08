@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Eye } from 'lucide-react'
+import { AlertTriangle, Eye } from 'lucide-react'
 import { api, fmt } from '../api'
 import FlowStrip from '../components/FlowStrip'
 import KpiRow from '../components/KpiRow'
@@ -63,6 +63,12 @@ export default function Market({ onNavigate }) {
               page.reload()
             }} />
           </form>
+          {job?.degraded && (
+            <p className="badge warn" role="status">
+              <AlertTriangle size={14} aria-hidden="true" />
+              <span>{t('Daily AI budget reached. This round used the rule-based agents.')}</span>
+            </p>
+          )}
           {running && (
             <div className="round-progress" role="status">
               <p className="muted">

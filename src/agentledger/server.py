@@ -13,23 +13,29 @@ The frontend API contract is documented in docs/FRONTEND_RULES.md; change both t
 from __future__ import annotations
 
 import hmac
+import logging
+import secrets
 import sqlite3
 import threading
-from datetime import date
+import time
+from datetime import UTC, date, datetime
 from typing import Any
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from agentledger.agents import accounting, llm, telemetry
 from agentledger.analytics import pipeline
 from agentledger.config import Settings, load_settings
-from agentledger.db import connect, transaction, wipe_all
+from agentledger.db import connect, transaction, verify_audit_chain, wipe_all
 from agentledger.economy import ledger
+from agentledger.governance import Capabilities, CapabilityGate
 from agentledger.platform_api import create_app as platform_app
 from agentledger.runner import BUYER, Market, run_summary, summarize
 from agentledger.sellers.app import create_app as seller_app
+
+log = logging.getLogger(__name__)
 
 
 class RoundRequest(BaseModel):
@@ -46,14 +52,37 @@ def _rows(conn: sqlite3.Connection, sql: str, params: tuple[Any, ...] = ()) -> l
     return [dict(r) for r in conn.execute(sql, params).fetchall()]
 
 
+def _token_ok(expected: str | None, presented: str | None) -> bool:
+    if not expected or not presented or len(presented) != len(expected):
+        return False
+    return hmac.compare_digest(presented, expected)
+
+
+def _ai_spent_today_micro(conn: sqlite3.Connection) -> int:
+    today = datetime.now(UTC).date().isoformat()
+    row = conn.execute(
+        "SELECT COALESCE(SUM(cost_micro_usd), 0) FROM agent_runs WHERE substr(started_at, 1, 10) = ?",
+        (today,),
+    ).fetchone()
+    return int(row[0])
+
+
 def create_app(settings: Settings | None = None) -> FastAPI:
     s = settings or load_settings()
     if s.role == "sellers":
         return seller_app(s)
 
-    platform = platform_app(s)
+    gate = CapabilityGate(Capabilities.from_env())
+    operator_token = s.admin_token or secrets.token_urlsafe(24)
+    platform = platform_app(s, operator_token=operator_token, gate=gate)
     sellers = None if s.seller_url else seller_app(s)
-    market = Market.in_process(s, platform, sellers)
+    market = Market.in_process(s, platform, sellers, operator_token=operator_token, gate=gate)
+    try:
+        market.bootstrap()  # buyer wallet is funded before the first page view
+    except Exception:
+        log.warning("startup bootstrap failed", exc_info=True)
+        if not s.seller_url:
+            raise
 
     app = FastAPI(title="AgentLedger 360")
     app.mount("/platform", platform)
@@ -63,6 +92,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     price = accounting.price_for(llm.model_name(s), s)
     jobs: dict[str, dict[str, Any]] = {}
     jobs_lock = threading.Lock()
+    last_round_at: dict[str, float] = {}
 
     def after_round() -> dict[str, Any]:
         conn = connect(s)
@@ -88,6 +118,32 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         children += [c for c in telemetry.live_children(run_id) if c.run_id not in child_ids]
         return {**report.model_dump(mode="json"), "children": [c.model_dump(mode="json") for c in children]}
 
+    def spent_today_usd() -> float:
+        conn = connect(s)
+        try:
+            return _ai_spent_today_micro(conn) / 1_000_000
+        finally:
+            conn.close()
+
+    def admit_round(request: Request) -> str | None:
+        """Rate-limit and optional run token. Returns a degrade reason when the daily AI budget is spent."""
+        if s.run_token is not None and not _token_ok(s.run_token, request.headers.get("x-run-token")):
+            raise HTTPException(403, "run token required (header X-Run-Token)")
+        if s.round_min_interval_seconds > 0:
+            ip = request.client.host if request.client else "unknown"
+            now = time.monotonic()
+            previous = last_round_at.get(ip)
+            if previous is not None and now - previous < s.round_min_interval_seconds:
+                raise HTTPException(429, "one round per minute from this address")
+            last_round_at[ip] = now
+        if spent_today_usd() >= s.daily_ai_budget_usd:
+            return "daily AI budget reached"
+        return None
+
+    def require_admin(presented: str | None) -> None:
+        if not _token_ok(operator_token, presented):
+            raise HTTPException(403, "admin token required (header X-Admin-Token)")
+
     @app.get("/api/health")
     def health() -> dict[str, Any]:
         llm_on = market.mode == "llm"
@@ -97,7 +153,32 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "price_per_m_tokens": ({"input_usd": price.input_per_m, "output_usd": price.output_per_m,
                                         "source": price.source} if price and llm_on else None),
                 "budget": {"max_tool_calls": s.agent_max_tool_calls, "max_cost_usd": s.agent_max_cost_usd},
-                "reset_requires_token": s.admin_token is not None}
+                "reset_requires_token": s.admin_token is not None,
+                "capabilities": gate.snapshot(),
+                "daily_ai_budget_usd": s.daily_ai_budget_usd,
+                "ai_spent_today_usd": round(spent_today_usd(), 6),
+                "run_requires_token": s.run_token is not None}
+
+    @app.post("/api/admin/pause")
+    def pause_market(x_admin_token: str | None = Header(default=None)) -> dict[str, bool | int]:
+        require_admin(x_admin_token)
+        gate.paused = True
+        return gate.snapshot()
+
+    @app.post("/api/admin/resume")
+    def resume_market(x_admin_token: str | None = Header(default=None)) -> dict[str, bool | int]:
+        require_admin(x_admin_token)
+        gate.paused = False
+        return gate.snapshot()
+
+    @app.get("/api/audit/verify")
+    def audit_verify() -> dict[str, bool | int | None]:
+        conn = connect(s)
+        try:
+            ok, bad = verify_audit_chain(conn)
+        finally:
+            conn.close()
+        return {"ok": ok, "first_bad_seq": bad}
 
     @app.post("/api/demo/reset")
     def reset_demo(x_admin_token: str | None = Header(default=None)) -> dict[str, Any]:
@@ -124,23 +205,29 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 **after_round()}
 
     @app.post("/api/round")
-    def run_round(req: RoundRequest) -> dict[str, Any]:
+    def run_round(req: RoundRequest, request: Request) -> dict[str, Any]:
         """Synchronous round (kept for the Market page). With an LLM agent this can take a minute."""
+        degraded = admit_round(request)
         purchases: list[dict[str, Any]] = []
         try:
             for _ in range(req.rounds):
-                purchases += [summarize(p) for p in market.run_round(req.symbols)]
+                purchases += [summarize(p) for p in market.run_round(req.symbols, force_rule=degraded is not None)]
         except Exception as exc:  # e.g. remote seller service asleep (Render free tier cold start)
             raise HTTPException(502, f"market round failed: {exc!r}") from exc
-        return {"purchases": purchases, "agent_run": run_summary(market.last_run), **after_round()}
+        body: dict[str, Any] = {"purchases": purchases, "agent_run": run_summary(market.last_run), **after_round()}
+        if degraded:
+            body["degraded"] = degraded
+        return body
 
     # ---------------------------------------------------------------- live agent rounds (Agent Console)
     @app.post("/api/agent/rounds")
-    def start_agent_round(req: AgentRoundRequest) -> dict[str, str]:
+    def start_agent_round(req: AgentRoundRequest, request: Request) -> dict[str, str]:
         """Start a round in the background; poll GET /api/agent/rounds/{job_id} to watch the agents."""
+        degraded = admit_round(request)
         job_id = telemetry.new_job_id()
-        job: dict[str, Any] = {"job_id": job_id, "status": "running", "mode": market.mode, "run_id": None,
-                               "purchases": None, "result": None, "error": None}
+        job: dict[str, Any] = {"job_id": job_id, "status": "running",
+                               "mode": "rule" if degraded else market.mode, "run_id": None,
+                               "purchases": None, "result": None, "error": None, "degraded": degraded}
         with jobs_lock:
             jobs[job_id] = job
 
@@ -149,7 +236,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         def work() -> None:
             try:
-                job["purchases"] = [summarize(p) for p in market.run_round(req.symbols, req.as_of, on_start)]
+                job["purchases"] = [summarize(p) for p in market.run_round(
+                    req.symbols, req.as_of, on_start, force_rule=degraded is not None)]
                 job["result"] = after_round()
                 job["status"] = "completed"
             except Exception as exc:  # surfaced to the UI, never swallowed

@@ -44,3 +44,9 @@ services:
         value: "0.50"
       - key: AL_ADMIN_TOKEN         # required by the "Reset demo" button on the public URL (see it in the dashboard)
         generateValue: true
+      - key: AL_DAILY_AI_BUDGET_USD # past this, public rounds fall back to the rule agent
+        value: "2.00"
+      - key: AL_CAP_OPEN_FUNDING    # public signup must not mint money
+        value: "0"
+      - key: AL_CAP_MAX_ORDER_MINOR
+        value: "500"

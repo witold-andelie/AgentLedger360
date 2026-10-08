@@ -1,7 +1,8 @@
 /* eslint-disable react-refresh/only-export-components --
    infra file: exports the provider, the hook and a pure helper together (same pattern as i18n.jsx) */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { api } from './api'
+import { api, rememberRunToken } from './api'
+import { useT } from './i18n.jsx'
 
 const POLL_MS = 1500
 
@@ -12,6 +13,7 @@ const POLL_MS = 1500
 const AgentRoundContext = createContext(null)
 
 export function AgentRoundProvider({ children }) {
+  const { t } = useT()
   const [starting, setStarting] = useState(false)
   const [jobId, setJobId] = useState(null)
   const [job, setJob] = useState(null)
@@ -58,14 +60,23 @@ export function AgentRoundProvider({ children }) {
     setJob(null)
     setStartedAt(Date.now())
     try {
-      const { job_id: id } = await api.startAgentRound(symbols)
-      setJobId(id)
+      let started
+      try {
+        started = await api.startAgentRound(symbols)
+      } catch (err) {
+        if (!/run token/i.test(err.message)) throw err
+        const token = window.prompt(t('Run token'))
+        if (!token) throw err
+        rememberRunToken(token)
+        started = await api.startAgentRound(symbols)
+      }
+      setJobId(started.job_id)
     } catch (err) {
       setStartError(err)
     } finally {
       setStarting(false)
     }
-  }, [busy])
+  }, [busy, t])
 
   const clear = useCallback(() => {
     setJobId(null)

@@ -1,32 +1,22 @@
 /* eslint-disable react-refresh/only-export-components --
    this infra file intentionally exports both the provider and the useT hook */
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { ZH } from './translations'
+import { createContext, useCallback, useContext, useEffect } from 'react'
 
 /**
- * Lightweight i18n (same mechanism as EuroGoal, direction flipped for an English-speaking jury):
- * the ENGLISH source string is the key: t('Run market round'). In Chinese mode we look it up in ZH;
- * a missing key degrades to English, so the default demo language can never show a half-translated UI.
+ * English-only UI. t() returns the source string so call sites stay greppable.
+ * A previously stored language choice is cleared so the page cannot come back in another language.
  */
 const I18nContext = createContext(null)
 
 export function LanguageProvider({ children }) {
-  const [lang, setLangState] = useState(() => {
-    try { return localStorage.getItem('lang') || 'en' } catch { return 'en' }
-  })
-
   useEffect(() => {
-    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en'
-  }, [lang])
-
-  const setLang = useCallback((l) => {
-    try { localStorage.setItem('lang', l) } catch { /* private mode etc. */ }
-    setLangState(l)
+    document.documentElement.lang = 'en'
+    try { localStorage.removeItem('lang') } catch { /* private mode */ }
   }, [])
 
-  const t = useCallback((s) => (lang === 'zh' ? (ZH[s] ?? s) : s), [lang])
+  const t = useCallback((s) => s, [])
 
-  return <I18nContext.Provider value={{ lang, setLang, t }}>{children}</I18nContext.Provider>
+  return <I18nContext.Provider value={{ lang: 'en', setLang: () => {}, t }}>{children}</I18nContext.Provider>
 }
 
 export function useT() {

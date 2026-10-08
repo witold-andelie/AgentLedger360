@@ -21,6 +21,9 @@ class Settings:
     seller_public_url: str   # base URL this seller service advertises in its agent cards
     frontend_dist: Path      # Vite build output served at "/" when present
     admin_token: str | None  # if set, POST /api/demo/reset requires header X-Admin-Token (set it on Render)
+    daily_ai_budget_usd: float   # past this, a round degrades to the rule agent (AL_DAILY_AI_BUDGET_USD)
+    run_token: str | None         # if set, starting a round requires header X-Run-Token
+    round_min_interval_seconds: int  # minimum gap between rounds from the same IP; 0 disables the limit
     # ---- AI agents (agents/llm.py, agents/graph.py) ----
     agent_mode: str          # auto (LLM if a key is configured) | llm | rule (deterministic fallback)
     llm_provider: str        # mistral | anthropic | openai_compat (DeepSeek, OpenRouter, vLLM, ...)
@@ -56,6 +59,9 @@ def load_settings() -> Settings:
         seller_public_url=os.getenv("AL_SELLER_PUBLIC_URL", "inproc://sellers").rstrip("/"),
         frontend_dist=Path(os.getenv("AL_FRONTEND_DIST", "frontend/dist")).resolve(),
         admin_token=os.getenv("AL_ADMIN_TOKEN") or None,
+        daily_ai_budget_usd=float(os.getenv("AL_DAILY_AI_BUDGET_USD", "2.00")),
+        run_token=os.getenv("AL_RUN_TOKEN") or None,
+        round_min_interval_seconds=int(os.getenv("AL_ROUND_MIN_INTERVAL_SECONDS", "60")),
         agent_mode=os.getenv("AL_AGENT_MODE", "auto"),
         llm_provider=os.getenv("AL_LLM_PROVIDER", "mistral"),
         llm_model=os.getenv("AL_LLM_MODEL", ""),

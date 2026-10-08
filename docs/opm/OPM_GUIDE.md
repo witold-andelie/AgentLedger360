@@ -1,58 +1,58 @@
-# AgentLedger 360 — OPM 规则框架指南（给接手的 agent / 开发者）
+# AgentLedger 360 — OPM Rule-Framework Guide (for the agent / developer taking over)
 
-本目录是项目的**系统模型单一事实源**（single source of truth）：
+This directory is the project's **single source of truth** for the system model:
 
-| 文件 | 作用 |
+| File | Role |
 |---|---|
-| `agentledger_opm.dot` | OPM 图（ISO 19450 记法，Graphviz DOT）。**改模型只改这个文件** |
-| `agentledger_opm.svg` | 全图（所有 OPD + 图例 + 规则表） |
-| `opm_SD.svg` … `opm_SD4.svg` | 每个 OPD 单独一张，方便阅读 |
-| `OPM_GUIDE.md`（本文） | OPL 文本、事物→代码映射、规则→测试映射、接手流程 |
+| `agentledger_opm.dot` | OPM diagram (ISO 19450 notation, Graphviz DOT). **Change the model only in this file** |
+| `agentledger_opm.svg` | Full diagram (all OPDs + legend + rule table) |
+| `opm_SD.svg` … `opm_SD4.svg` | One image per OPD, for easier reading |
+| `OPM_GUIDE.md` (this document) | OPL text, thing-to-code map, rule-to-test map, handover workflow |
 
-重新渲染：`python scripts/render_opm.py`（需要 Graphviz `dot`）。
-
----
-
-## 0. 接手 agent 的工作流（必须遵守）
-
-1. **先读 SD，再按虚线 "in-zoomed in" 往下读**：SD → SD1（交易）→ SD2（争议）→ SD3（分析）→ SD4（开发部署）。
-2. **动代码前**：在 DOT 里找到你要改的过程（椭圆），看它的灰色小字（实现模块）和橙色标签 `[R…]`（必须遵守的规则）。
-3. **改代码后**，如果改变了下列任何一项，**同一个提交里**同步更新 `agentledger_opm.dot` + 本文 + 重新渲染：
-   - 新增/删除/重命名过程、对象或状态（例如新增 `CANCELLED` 超时退款流程）
-   - 改了对象的状态集合（`OrderStatus`、`DisputeDecision`…）
-   - 改了 `contracts.py`、`sql/001_core.sql`、事件类型或 payload（R15：需两位开发者同意）
-   - 改了某条规则的执行位置
-4. 每次合并前跑兼容门禁：`scripts/check_compat.ps1`（Windows）或 `scripts/check_compat.sh`（3.11 + 3.13 + ruff）。
-5. 不确定某个改动是否破坏规则 → 看第 4 节的「验证方式」列，跑对应测试。
+Re-render with `python scripts/render_opm.py` (requires the Graphviz `dot` binary).
 
 ---
 
-## 1. 记法速查（与图例一致）
+## 0. Handover workflow (mandatory)
 
-| 记号 | DOT 写法 | 含义 |
+1. **Read SD first, then follow the dashed "in-zoomed in" edges downward**: SD → SD1 (trade) → SD2 (dispute) → SD3 (analytics) → SD4 (dev and deploy).
+2. **Before changing code**: in the DOT, find the process (ellipse) you are about to change. Read its grey small print (implementing module) and its orange label `[R…]` (rules it must obey).
+3. **After changing code**, if you changed any of the following, update `agentledger_opm.dot` and this document and re-render **in the same commit**:
+   - added, removed, or renamed a process, an object, or a state (for example a new `CANCELLED` timeout-refund flow)
+   - changed an object's set of states (`OrderStatus`, `DisputeDecision`, …)
+   - changed `contracts.py`, `sql/001_core.sql`, an event type, or a payload (R15: both developers must agree)
+   - changed where a rule is enforced
+4. Before every merge, run the compatibility gate: `scripts/check_compat.ps1` (Windows) or `scripts/check_compat.sh` (3.11 + 3.13 + ruff).
+5. If you are not sure whether a change breaks a rule, look at the "How verified" column in section 4 and run the corresponding test.
+
+---
+
+## 1. Notation cheat sheet (matches the legend)
+
+| Mark | DOT syntax | Meaning |
 |---|---|---|
-| 矩形（绿） | `shape=box color="#2E7D32"` | 对象（信息性） |
-| 双边框 | `peripheries=2` | 物理对象（人、笔记本） |
-| 虚线边框 | `style=dashed` | 环境对象（系统外：Render、Claude API、评委、行情源） |
-| 椭圆（蓝） | `shape=ellipse color="#1565C0"` | 过程 |
-| 对象内圆角框（棕） | HTML 嵌套表 `STYLE="rounded"` + `PORT` | 状态；边连到 `Object:port` 表示状态级链接 |
-| 普通箭头 对象→过程 | 默认 | 消耗（consumption） |
-| 普通箭头 过程→对象 | 默认 | 结果（result） |
-| 双向箭头 | `dir=both` | 影响（effect：改变对象但不消耗） |
-| 空心圆端 | `arrowhead=odot` | 工具（instrument，非人使能者——**AI agent 在 OPM 中是工具，不是 agent**） |
-| 实心圆端 | `arrowhead=dot` | agent（人类使能者） |
-| 标签 `c` | `label="c: ..."` | 条件链接：条件不满足则跳过该过程 |
-| 粗蓝箭头 "invokes" | `style=bold arrowhead=vee` | 调用链接 |
-| 黑三角 | `shape=triangle fillcolor=black` | 聚合-部分 |
-| 双线白三角 | `shape=triangle peripheries=2` | 展示-特征（属性） |
-| 灰虚线 "in-zoomed in SDn" | `lhead=cluster_SDn` | 细化：父过程在子 OPD 中展开 |
-| 橙色 `[R2 R5]` | 过程标签第三行 | 该过程必须遵守的规则（见第 4 节） |
+| Rectangle (green) | `shape=box color="#2E7D32"` | Object (informational) |
+| Double border | `peripheries=2` | Physical object (a person, a laptop) |
+| Dashed border | `style=dashed` | Environmental object (outside the system: Render, the Claude API, the jury, a market-data source) |
+| Ellipse (blue) | `shape=ellipse color="#1565C0"` | Process |
+| Rounded box inside an object (brown) | HTML nested table `STYLE="rounded"` + `PORT` | State; an edge to `Object:port` is a state-level link |
+| Plain arrow, object → process | default | Consumption |
+| Plain arrow, process → object | default | Result |
+| Double-headed arrow | `dir=both` | Effect (changes the object without consuming it) |
+| Open-circle arrowhead | `arrowhead=odot` | Instrument (a non-human enabler — **in OPM an AI agent is an instrument, not an agent**) |
+| Filled-circle arrowhead | `arrowhead=dot` | Agent (a human enabler) |
+| Label `c` | `label="c: ..."` | Condition link: if the condition is not met, skip that process |
+| Thick blue arrow "invokes" | `style=bold arrowhead=vee` | Invocation link |
+| Black triangle | `shape=triangle fillcolor=black` | Aggregation-participation |
+| White triangle, double outline | `shape=triangle peripheries=2` | Exhibition-characterization (attribute) |
+| Grey dashed "in-zoomed in SDn" | `lhead=cluster_SDn` | Unfolding: the parent process is expanded in the child OPD |
+| Orange `[R2 R5]` | third line of the process label | Rules that process must obey (see section 4) |
 
-In-zoom 图中过程**自上而下 = 时间顺序**（用不可见边固定排序）。
+In an in-zoomed diagram, processes **from top to bottom = time order** (the order is pinned by invisible edges).
 
 ---
 
-## 2. OPL（Object-Process Language）— 与图一一对应
+## 2. OPL (Object-Process Language) — one-to-one with the diagram
 
 ### SD — System Diagram
 - **Trading Market Intelligence** requires Buyer Agent, Seller Agents, Clearing House and Price Oracle.
@@ -141,71 +141,74 @@ In-zoom 图中过程**自上而下 = 时间顺序**（用不可见边固定排�
 
 ---
 
-## 3. 事物 → 代码映射（接手时的导航表）
+## 3. Thing → code map (navigation table for handover)
 
-| OPM 事物 | 类型 | 代码 | 负责人 |
+| OPM thing | Kind | Code | Owner |
 |---|---|---|---|
-| Agent Card / Quote / Receipt / Deliverable / Quality Report / Decision | 对象 | `src/agentledger/contracts.py` | A+B（冻结） |
-| Order（7 状态） | 对象 | `contracts.OrderStatus`, `core.orders`, `economy/escrow.py` | A |
-| Money / Ledger | 对象 | `economy/ledger.py`, `core.ledger_entries` | A |
-| Registry / Reputation | 对象 | `economy/registry.py`, `core.agents` | A |
-| Survival Tier / Buyer Agent | 对象 | `agents/buyer.py` | A |
-| Seller Agents | 对象 | `sellers/catalog.py`（B），`sellers/app.py`（A：402 paywall） | A/B |
-| Price Oracle | 环境对象 | `market/data.py` | B |
-| Acceptance Criteria / Verifying | 对象/过程 | `market/quality.py`, `market/backtest.py` | B |
+| Agent Card / Quote / Receipt / Deliverable / Quality Report / Decision | object | `src/agentledger/contracts.py` | A+B (frozen) |
+| Order (7 states) | object | `contracts.OrderStatus`, `core.orders`, `economy/escrow.py` | A |
+| Money / Ledger | object | `economy/ledger.py`, `core.ledger_entries` | A |
+| Registry / Reputation | object | `economy/registry.py`, `core.agents` | A |
+| Survival Tier / Buyer Agent | object | `agents/buyer.py` | A |
+| Seller Agents | object | `sellers/catalog.py` (B), `sellers/app.py` (A: 402 paywall) | A/B |
+| Price Oracle | environmental object | `market/data.py` | B |
+| Acceptance Criteria / Verifying | object / process | `market/quality.py`, `market/backtest.py` | B |
 | Signals (sellers' models) | — | `market/signals.py`, `market/features.py` | B |
-| Holding / Delivering / Recording Delivery / Settling | 过程 | `escrow.hold`, `escrow.mark_delivered`（`receipts.verify_content`）, `escrow.settle`, `platform_api.py` | A |
-| Expiring | 过程 | `escrow.expire_undelivered` | A |
-| Resolving Dispute (SD2) | 过程 | `economy/disputes.py`（policy_band / validate） | A |
-| Guardian Investigating (SD2) | 过程 | `agents/guardian.py` | A |
-| Buyer Agent brain (SD1 → SD5) | 对象 | `agents/buyer_agent.py`（7 个工具 + 工具侧策略） | A |
-| Planning / Acting / Reflecting (SD5) | 过程 | `agents/graph.py`（LangGraph） | A |
-| LLM Provider (SD5) | 环境对象 | `agents/llm.py`（Mistral 默认 / Claude / OpenAI-compatible） | A |
-| Token Meter / Budget / Agent Run Report (SD5) | 对象 | `agents/accounting.py`, `agents/telemetry.py`, `sql/003_agents.sql` | A |
-| Building AI cost facts (SD3) | 过程 | `sql/marts/fact_llm_calls.sql`, 视图 `v_ai_cost_by_agent/model` | B |
-| Agent Console 页面 | — | `frontend/src/pages/AgentConsole.jsx`（规则 §11） | 前端负责人 |
-| Running Round in Background / Background Round Job (SD3) | 过程 / 对象 | `server.py` `/api/agent/rounds` | A |
-| Polling Round / Shared Round State (SD3) | 过程 / 对象 | `frontend/src/agentRound.jsx` | 前端负责人 |
-| AI 成本页面元素 | — | `components/KpiRow.jsx`、`components/AiCostTables.jsx` | 前端负责人 |
-| Resetting Demo / Demo Data / Admin Token (SD4) | 过程 / 对象 | `server.py` `/api/demo/reset`、`db.wipe_all`、`components/ResetDemoButton.jsx` | A |
-| Emitting Events | 过程 | `db.emit_event` | A |
-| Market round orchestration | 过程 | `runner.py`（CLI `demo.py`，Web `server.py /api/round`） | A |
-| Ingesting / Building / DQ / Logging | 过程 | `analytics/ingest.py`, `analytics/pipeline.py`, `sql/marts/*`, `sql/quality_checks.sql` | B |
-| KPI Views | 对象 | `sql/002_analytics.sql` | B |
-| Serving API | 过程 | `server.py` | A |
-| Rendering Dashboard | 过程 | `frontend/`（规则：`docs/FRONTEND_RULES.md`） | 前端负责人 |
-| Compat Gate | 对象 | `scripts/check_compat.*`, `.github/workflows/ci.yml` | A+B |
-| Container Image / Render | 对象 | `Dockerfile`, `render.yaml` | A |
+| Holding / Delivering / Recording Delivery / Settling | process | `escrow.hold`, `escrow.mark_delivered` (`receipts.verify_content`), `escrow.settle`, `platform_api.py` | A |
+| Expiring | process | `escrow.expire_undelivered` | A |
+| Resolving Dispute (SD2) | process | `economy/disputes.py` (`policy_band` / `validate`) | A |
+| Guardian Investigating (SD2) | process | `agents/guardian.py` | A |
+| Buyer Agent brain (SD1 → SD5) | object | `agents/buyer_agent.py` (7 tools + tool-side policy) | A |
+| Planning / Acting / Reflecting (SD5) | process | `agents/graph.py` (LangGraph) | A |
+| LLM Provider (SD5) | environmental object | `agents/llm.py` (Mistral by default / Claude / OpenAI-compatible) | A |
+| Token Meter / Budget / Agent Run Report (SD5) | object | `agents/accounting.py`, `agents/telemetry.py`, `sql/003_agents.sql` | A |
+| Building AI cost facts (SD3) | process | `sql/marts/fact_llm_calls.sql`, views `v_ai_cost_by_agent/model` | B |
+| Agent Console page | — | `frontend/src/pages/AgentConsole.jsx` (rules §11) | frontend owner |
+| Running Round in Background / Background Round Job (SD3) | process / object | `server.py` `/api/agent/rounds` | A |
+| Polling Round / Shared Round State (SD3) | process / object | `frontend/src/agentRound.jsx` | frontend owner |
+| AI cost page elements | — | `components/KpiRow.jsx`, `components/AiCostTables.jsx` | frontend owner |
+| Resetting Demo / Demo Data / Admin Token (SD4) | process / object | `server.py` `/api/demo/reset`, `db.wipe_all`, `components/ResetDemoButton.jsx` | A |
+| Emitting Events / Audit Chain | process | `db.emit_event`, `db.verify_audit_chain`, `sql/004_security.sql` | A |
+| Capability switches | object | `governance.py` | A |
+| Market round orchestration | process | `runner.py` (CLI `demo.py`, Web `server.py /api/round`) | A |
+| Ingesting / Building / DQ / Logging | process | `analytics/ingest.py`, `analytics/pipeline.py`, `sql/marts/*`, `sql/quality_checks.sql` | B |
+| KPI Views | object | `sql/002_analytics.sql` | B |
+| Serving API | process | `server.py` | A |
+| Rendering Dashboard | process | `frontend/` (rules: `docs/FRONTEND_RULES.md`) | frontend owner |
+| Compat Gate | object | `scripts/check_compat.*`, `.github/workflows/ci.yml` | A+B |
+| Container Image / Render | object | `Dockerfile`, `render.yaml` | A |
 
 ---
 
-## 4. 规则（不变量）→ 执行位置 → 验证方式
+## 4. Rules (invariants) → where enforced → how verified
 
-| ID | 规则 | 执行位置 | 验证方式 |
+| ID | Rule | Where enforced | How verified |
 |---|---|---|---|
-| R1 | LLM agent 选择动作、提出裁决；每一笔资金变动由确定性工具/策略授权；裁决只在 policy band 内生效 | `buyer_agent` 工具侧检查、`disputes.validate`、`escrow.*` | `tests/test_agents.py`（越界裁决回退规则表）；`economy/` 不得 import `agents` |
-| R2 | 金额为整数分；每笔账务借贷和为 0；只有 treasury 可为负 | `ledger.post` | `tests/test_economy.py`；DQ `ledger_txns_balanced`、`no_negative_agent_balance` |
-| R3 | 状态变更与 outbox 事件同一事务 | `db.transaction`（BEGIN IMMEDIATE）+ `emit_event` | DQ `ingestion_complete`、`oltp_vs_warehouse_order_count` |
-| R4 | 订单状态只能经 `_transition` 比较并设置 | `escrow._transition` | `test_settle_pays_seller_minus_fee_and_cannot_repeat` |
-| R5 | 幂等：同 key 重复 hold 返回同一订单；买家只充值一次；收据只兑现一次 | `escrow.hold`、`registry.register_buyer`、`sellers/app.py redeemed` | `test_hold_is_idempotent_and_receipt_verifies` |
-| R6 | 先检查授权额度（单笔/日限额），再扣款；生存等级限制价格 | `escrow.hold`、`buyer.TIERS` | `test_insufficient_funds_and_mandate_are_enforced` |
-| R7 | 卖方执行**报价时**的任务；验证支付 HMAC、金额、报价归属，并用派生密钥 HMAC 签交付 `content_hash`（平台在 Recording Delivery 用 `verify_content` 验签后才 `_transition`，见第 2 节，R4） | `sellers/app.py::task`, `receipts.sign_content` | e2e；手工：篡改 `X-Payment` 应得 402 |
-| R8 | 仲裁者重算证据哈希、重跑验收 | `disputes.open_and_resolve` | e2e 中 hype 卖方被全额退款 |
-| R9 | 全过→RELEASE；关键项失败→全额退款；仅表现项失败→50% 退款 | `disputes.decide` | e2e 状态集合含 REFUNDED/PARTIALLY_REFUNDED |
-| R10 | 时点一致：行日期 ≤ as_of；合成价格固定长度；种子用 crc32 | `market/data.py`、`quality.py` | `test_synthetic_prices_are_point_in_time_stable` |
-| R11 | 数仓只由事件构建；event_id 去重；集市可重复重建 | `ingest.py`、`sql/marts/*` | 连续跑两次 pipeline 结果相同 |
-| R12 | 11 项 DQ 全部 0 违规（含 AI 成本：调用合计 = 运行合计）；托管余额 = 未结订单金额 | `sql/quality_checks.sql`、`/platform/ledger/check` | `tests/test_e2e.py` |
-| R13 | 3.11 与 3.13 双绿才可合并 | `scripts/check_compat.*`、CI 矩阵 | 运行脚本 |
-| R14 | 前端只经 `api.js` 调后端；金额 `fmt.usd`；状态=颜色+图标+文字 | `frontend/src/api.js` | `docs/FRONTEND_RULES.md` 第 10 节 |
-| R15 | `contracts.py`、`sql/001_core.sql` 冻结，改动需双方同意并更新 OPM | 流程约束 | PR 审查 |
-| R16 | 私有提纲文档不出本机；不声称与 SAP 产品集成 | `.gitignore`、`.dockerignore` | `git status` 中不得出现该文件 |
-| R17 | 每次 LLM 调用都计量（token、整数 micro-USD、价格来源）；工具次数/费用到预算即停；轨迹与事件同一事务落库 | `agents/accounting.py`、`agents/telemetry.py` | `test_llm_buyer_agent_runs_the_protocol_and_meters_every_call`；DQ `ai_cost_reconciles_calls_vs_runs` |
-| R18 | Grounding：报告只能引用工具结果中的订单；guardian 必须引用确实失败的检查；未决交付由策略收尾 | `run_llm_buyer`、`disputes.validate`、`finalize_open_orders` | `test_agents.py`（幻觉 order id 被丢弃；越界/错误引用被拒） |
+| R1 | An LLM agent chooses actions and proposes rulings; every movement of funds is authorized by a deterministic tool or policy; a ruling takes effect only inside the policy band | tool-side checks in `buyer_agent`, `disputes.validate`, `escrow.*` | `tests/test_agents.py` (an out-of-band ruling falls back to the rule table); `economy/` must not import `agents` |
+| R2 | Amounts are integer cents; each ledger transaction's debits and credits sum to 0; only treasury may be negative | `ledger.post` | `tests/test_economy.py`; DQ `ledger_txns_balanced`, `no_negative_agent_balance` |
+| R3 | A state change and its outbox event share one transaction | `db.transaction` (`BEGIN IMMEDIATE`) + `emit_event` | DQ `ingestion_complete`, `oltp_vs_warehouse_order_count` |
+| R4 | Order status may only be compare-and-set through `_transition` | `escrow._transition` | `test_settle_pays_seller_minus_fee_and_cannot_repeat` |
+| R5 | Idempotency: repeating hold with the same key returns the same order; a buyer is funded only once; a receipt is redeemed only once | `escrow.hold`, `registry.register_buyer`, `sellers/app.py` `redeemed` | `test_hold_is_idempotent_and_receipt_verifies` |
+| R6 | Check the spend mandate (per-order / daily cap) before debiting; the survival tier caps the price | `escrow.hold`, `buyer.TIERS` | `test_insufficient_funds_and_mandate_are_enforced` |
+| R7 | The seller executes the task **as quoted**; it verifies the payment HMAC, the amount, and quote ownership, and HMAC-signs the delivered `content_hash` with a derived key (at Recording Delivery the platform `_transition`s only after `verify_content` accepts the signature; see section 2, R4) | `sellers/app.py::task`, `receipts.sign_content` | e2e; manual: tampering with `X-Payment` must return 402 |
+| R8 | The arbiter recomputes the evidence hash and re-runs acceptance | `disputes.open_and_resolve` | in e2e the hype seller is fully refunded |
+| R9 | All checks pass → RELEASE; a critical check fails → full refund; only a performance check fails → 50% refund | `disputes.decide` | the e2e status set includes REFUNDED / PARTIALLY_REFUNDED |
+| R10 | Point-in-time consistency: a row's date is ≤ as_of; synthetic prices have a fixed length; the seed uses crc32 | `market/data.py`, `quality.py` | `test_synthetic_prices_are_point_in_time_stable` |
+| R11 | The warehouse is built only from events; dedupe on event_id; marts can be rebuilt | `ingest.py`, `sql/marts/*` | two consecutive pipeline runs produce the same result |
+| R12 | All 11 DQ checks have 0 violations (including AI cost: call totals equal run totals); escrow balance equals the amount of unsettled orders | `sql/quality_checks.sql`, `/platform/ledger/check` | `tests/test_e2e.py` |
+| R13 | Merge only when both 3.11 and 3.13 are green | `scripts/check_compat.*`, the CI matrix | run the script |
+| R14 | The frontend calls the backend only through `api.js`; amounts use `fmt.usd`; a status is color + icon + text | `frontend/src/api.js` | `docs/FRONTEND_RULES.md` section 10 |
+| R15 | `contracts.py` and `sql/001_core.sql` are frozen; a change needs agreement from both developers and an OPM update | process constraint | PR review |
+| R16 | The private outline document does not leave this machine; do not claim integration with an SAP product | `.gitignore`, `.dockerignore` | that file must not appear in `git status` |
+| R17 | Every LLM call is metered (tokens, integer micro-USD, price source); stop when the tool-count or cost budget is reached; the trace and its events are persisted in one transaction | `agents/accounting.py`, `agents/telemetry.py` | `test_llm_buyer_agent_runs_the_protocol_and_meters_every_call`; DQ `ai_cost_reconciles_calls_vs_runs` |
+| R18 | Grounding: a report may cite only orders that appear in tool results; the guardian must cite checks that actually failed; undecided deliveries are closed out by policy | `run_llm_buyer`, `disputes.validate`, `finalize_open_orders` | `tests/test_agents.py` (a hallucinated order id is dropped; an out-of-band or wrongly cited ruling is rejected) |
+| R19 | Capability switches: public registration cannot bring its own funds unless the switch is on or an operator token is presented; refuse hold when the market is paused or the amount exceeds the global per-order cap | `governance.py`; registration and hold in `platform_api` | `tests/test_guardrails.py` |
+| R20 | Every outbox event is linked into the hash chain in the same transaction; after a payload is rewritten, verification fails and names the seq | `db.emit_event`, `db.verify_audit_chain` | `tests/test_guardrails.py` |
+| R21 | Public rounds: an optional run token, one round per IP per minute, and when the day's AI budget is exhausted the round falls back to the rule-based agent | `server.admit_round` | `tests/test_guardrails.py` |
 
 ---
 
-## 5. 已知缺口与待办
+## 5. Known gaps and backlog
 
-**单一来源是仓库根目录的 `progress.md`**（第 2.3 节是现存信任漏洞 A1–A4，第 5 节是带设计、文件和验收标准的待办 T1–T20）。
-计划中的过程（能力开关、清算所转交交付、攻防演示、哈希链审计、有界学习器、提示词注入防护、事后结果核验、人工复核、
-支付通道接口等）**还没有**画进 OPM：哪一项落地，就在同一个提交里把它加进 DOT 和本指南，然后重新渲染。
+**The single source is `progress.md` at the repo root** (section 2.3 lists the existing trust holes A1–A4; section 5 is the backlog T1–T20, each with a design, files, and acceptance criteria).
+Planned processes (capability switches, clearing-house handoff of delivery, an attack-and-defense demo, hash-chain audit, a bounded learner, prompt-injection defense, ex-post outcome verification, human review, a payment-rail interface, and the like) are **not yet** drawn in the OPM: when one of them lands, add it to the DOT and to this guide in the same commit, then re-render.

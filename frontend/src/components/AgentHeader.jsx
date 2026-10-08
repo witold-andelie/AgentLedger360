@@ -1,4 +1,5 @@
-import { Bot, Cpu } from 'lucide-react'
+import { AlertTriangle, Bot, Cpu, ShieldCheck } from 'lucide-react'
+import { fmt } from '../api'
 import { useT } from '../i18n.jsx'
 
 /** Which brain is running: LLM agents (provider, model, price, budget) or the rule-based fallback. */
@@ -35,6 +36,28 @@ export default function AgentHeader({ health }) {
         </div>
       </dl>
       {price && <p className="kpi-hint">{t('Price source')}: {price.source} · {t('cost figures are estimates')}</p>}
+      <CapabilityLine health={health} />
     </section>
+  )
+}
+
+function CapabilityLine({ health }) {
+  const { t } = useT()
+  const caps = health?.capabilities
+  if (!caps) return null
+  const paused = caps.market_paused
+  return (
+    <div className="agent-mode">
+      <span className={`badge ${paused ? 'warn' : 'good'}`}>
+        {paused ? <AlertTriangle size={14} aria-hidden="true" /> : <ShieldCheck size={14} aria-hidden="true" />}
+        <span>{t(paused ? 'Market paused' : 'Market open')}</span>
+      </span>
+      <span className="muted">
+        {t('Global order cap')} {fmt.usd(caps.max_order_minor)}
+        {' · '}
+        {t(caps.open_funding ? 'Open funding on' : 'Open funding off')}
+        {health.ai_spent_today_usd != null && ` · ${t('AI spent today')} $${Number(health.ai_spent_today_usd).toFixed(2)} / $${Number(health.daily_ai_budget_usd).toFixed(2)}`}
+      </span>
+    </div>
   )
 }

@@ -199,7 +199,7 @@ digraph AgentLedger360_OPM {
     p4  [shape=ellipse, color="#1565C0", label=<4 Assessing Tier<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">BuyerAgent.tier</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R6]</FONT>>];
     p5  [shape=ellipse, color="#1565C0", label=<5 Discovering &amp; Ranking<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">GET /registry/search, registry.search</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R1]</FONT>>];
     p6  [shape=ellipse, color="#1565C0", label=<6 Quoting (HTTP 402)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">POST /agents/{id}/tasks, no X-Payment</FONT>>];
-    p7  [shape=ellipse, color="#1565C0", label=<7 Holding in Escrow<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">POST /escrow/hold, escrow.hold</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R2 R5 R6]</FONT>>];
+    p7  [shape=ellipse, color="#1565C0", label=<7 Holding in Escrow<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">POST /escrow/hold, escrow.hold; c: market not paused</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R2 R5 R6 R19]</FONT>>];
     p8  [shape=ellipse, color="#1565C0", label=<8 Delivering (paid)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">POST /agents/{id}/tasks + X-Payment; receipts.sign_content</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R5 R7]</FONT>>];
     p9  [shape=ellipse, color="#1565C0", label=<9 Recording Delivery<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">escrow.mark_delivered, receipts.verify_content</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R4 R7]</FONT>>];
     p10 [shape=ellipse, color="#1565C0", label=<10 Verifying Contract<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">market/quality.evaluate + backtest</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R10]</FONT>>];
@@ -423,7 +423,7 @@ digraph AgentLedger360_OPM {
     a5 [shape=ellipse, color="#1565C0", label=<Logging Run<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">every task, success/failed/upstream_failed</FONT>>];
     a6 [shape=ellipse, color="#1565C0", label=<Serving API<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">server.py</FONT>>];
     a7 [shape=ellipse, color="#1565C0", label=<Rendering Dashboard<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">frontend (rules: docs/FRONTEND_RULES.md)</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R14]</FONT>>];
-    a9 [shape=ellipse, color="#1565C0", label=<Running Round in Background<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">server thread -&gt; runner.Market.run_round (SD1)</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R17]</FONT>>];
+    a9 [shape=ellipse, color="#1565C0", label=<Running Round in Background<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">server thread -&gt; runner.Market.run_round (SD1); c: under daily AI budget or degrade to rules</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R17 R21]</FONT>>];
     a10 [shape=ellipse, color="#1565C0", label=<Polling Round<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">agentRound.jsx, every 1.5 s</FONT>>];
 
     a1 -> a2 [style=invis, weight=10]; a1 -> a3 [style=invis, weight=10];
@@ -653,12 +653,15 @@ digraph AgentLedger360_OPM {
         <TR><TD ALIGN="LEFT"><B>R9</B></TD><TD ALIGN="LEFT">all pass -&gt; RELEASE; critical fail -&gt; REFUND_FULL; only performance fail -&gt; REFUND_PARTIAL 50%</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">economy/disputes.py::decide</FONT></TD></TR>
         <TR><TD ALIGN="LEFT"><B>R10</B></TD><TD ALIGN="LEFT">Point-in-time: rows &lt;= as_of; synthetic path fixed-length; seeds via zlib.crc32, never hash()</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">market/data.py, market/quality.py</FONT></TD></TR>
         <TR><TD ALIGN="LEFT"><B>R11</B></TD><TD ALIGN="LEFT">Warehouse built only from events; dedupe by event_id; marts rebuilt idempotently</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">analytics/ingest.py, sql/marts/*</FONT></TD></TR>
-        <TR><TD ALIGN="LEFT"><B>R12</B></TD><TD ALIGN="LEFT">11 DQ checks = 0 violations (incl. AI cost calls vs runs); escrow == open orders; OLTP orders == fact_orders</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">sql/quality_checks.sql</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R12</B></TD><TD ALIGN="LEFT">DQ checks = 0 violations (incl. AI cost and the audit chain); escrow == open orders; OLTP orders == fact_orders</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">sql/quality_checks.sql, db.verify_audit_chain</FONT></TD></TR>
         <TR><TD ALIGN="LEFT"><B>R13</B></TD><TD ALIGN="LEFT">Python 3.11 AND 3.13: no PEP 695, no sqlite autocommit=, ISO timestamps; gate green before merge</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">scripts/check_compat.*, ci.yml</FONT></TD></TR>
         <TR><TD ALIGN="LEFT"><B>R14</B></TD><TD ALIGN="LEFT">Frontend calls backend only via api.js; money via fmt.usd; status = colour + icon + label</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">docs/FRONTEND_RULES.md</FONT></TD></TR>
         <TR><TD ALIGN="LEFT"><B>R15</B></TD><TD ALIGN="LEFT">contracts.py + sql/001_core.sql are frozen: change only with both devs, then update OPM + guide</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">contracts.py, sql/001_core.sql</FONT></TD></TR>
         <TR><TD ALIGN="LEFT"><B>R17</B></TD><TD ALIGN="LEFT">Every LLM call is metered (tokens, integer micro-USD, price source); runs stop at the tool-call or cost budget; trace + events persist in one txn</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">agents/accounting.py, agents/telemetry.py</FONT></TD></TR>
         <TR><TD ALIGN="LEFT"><B>R18</B></TD><TD ALIGN="LEFT">Grounding: agent reports may only cite tool results; guardian must cite checks that failed; undecided deliveries are closed by policy</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">buyer_agent.run_llm_buyer, disputes.validate</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R19</B></TD><TD ALIGN="LEFT">Capability switches: open funding off unless flagged or operator-token; hold refused while paused or above the global cap</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">governance.py, platform_api register_buyer / hold</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R20</B></TD><TD ALIGN="LEFT">Each outbox event extends a hash chain in the same transaction; verify_audit_chain detects a rewritten payload</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">db.emit_event, db.verify_audit_chain</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R21</B></TD><TD ALIGN="LEFT">Public rounds: optional run token, one start per IP per minute, daily AI budget degrades the round to the rule agent</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">server.admit_round</FONT></TD></TR>
         <TR><TD ALIGN="LEFT"><B>R16</B></TD><TD ALIGN="LEFT">Private outline doc never leaves the laptop; no SAP product integration claimed</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">.gitignore, .dockerignore</FONT></TD></TR>
       </TABLE>>];
   }

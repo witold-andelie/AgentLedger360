@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Activity, Bot, Languages, ShieldCheck, Store, Users } from 'lucide-react'
+import { Activity, Bot, ShieldCheck, Store, Users } from 'lucide-react'
 import Market from './pages/Market'
 import Agents from './pages/Agents'
 import Customer360 from './pages/Customer360'
@@ -8,7 +8,7 @@ import AgentConsole from './pages/AgentConsole'
 import { useT } from './i18n.jsx'
 import { AgentRoundProvider } from './agentRound.jsx'
 
-// Shell only: header, tab navigation, language toggle, view switch. Page content lives in pages/.
+// Shell only: header, tab navigation, view switch. Page content lives in pages/. The UI is English only.
 // Navigation is plain state (no router), same as EuroGoal. Add a view = add one entry here.
 const VIEWS = [
   { id: 'market', label: 'Market', icon: Store, Page: Market },
@@ -19,7 +19,7 @@ const VIEWS = [
 ]
 
 export default function App() {
-  const { t, lang, setLang } = useT()
+  const { t } = useT()
   const [view, setView] = useState('market')
   const current = VIEWS.find((v) => v.id === view) ?? VIEWS[0]
   const { Page } = current
@@ -48,11 +48,6 @@ export default function App() {
               </button>
             ))}
           </nav>
-          <button className="lang-toggle" onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
-                  title={lang === 'en' ? t('Switch to Chinese') : t('Switch to English')}>
-            <Languages size={15} />
-            {lang === 'en' ? '中' : 'EN'}
-          </button>
         </div>
       </header>
       <main className="app-main">

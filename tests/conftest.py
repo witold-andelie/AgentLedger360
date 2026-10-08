@@ -15,6 +15,8 @@ def isolated_env(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("AL_DATA_SOURCE", "synthetic")
     # Deterministic by default: no test may call a real LLM (agent tests inject a scripted model).
     monkeypatch.setenv("AL_AGENT_MODE", "rule")
+    # Production allows one public round per minute. Tests start several rounds back to back.
+    monkeypatch.setenv("AL_ROUND_MIN_INTERVAL_SECONDS", "0")
     monkeypatch.setenv("AL_LLM_PROVIDER", "mistral")
     monkeypatch.delenv("AL_LLM_MODEL", raising=False)
     monkeypatch.delenv("AL_LLM_PRICE_IN", raising=False)

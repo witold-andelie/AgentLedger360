@@ -7,6 +7,7 @@ Cross-version notes (3.11 & 3.13):
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 import uuid
@@ -38,7 +39,7 @@ def connect(settings: Settings | None = None) -> sqlite3.Connection:
 
 
 def init_db(conn: sqlite3.Connection) -> None:
-    for name in ("001_core.sql", "002_analytics.sql", "003_agents.sql"):
+    for name in ("001_core.sql", "002_analytics.sql", "003_agents.sql", "004_security.sql"):
         conn.executescript((SQL_DIR / name).read_text(encoding="utf-8"))
 
 
@@ -54,14 +55,50 @@ def transaction(conn: sqlite3.Connection) -> Iterator[sqlite3.Connection]:
     conn.execute("COMMIT")
 
 
+def chain_hash(prev_hash: str, event_id: str, event_type: str, aggregate_id: str,
+               payload_json: str, occurred_at: str) -> str:
+    """sha256(prev_hash + canonical event fields). The first event uses an empty prev_hash."""
+    body = json.dumps(
+        {"aggregate_id": aggregate_id, "event_id": event_id, "event_type": event_type,
+         "occurred_at": occurred_at, "payload_json": payload_json},
+        sort_keys=True, separators=(",", ":"),
+    )
+    return hashlib.sha256((prev_hash + body).encode()).hexdigest()
+
+
 def emit_event(conn: sqlite3.Connection, event_type: str, aggregate_id: str, payload: dict[str, Any]) -> str:
-    """Append to the outbox. Call inside the same transaction as the state change."""
+    """Append to the outbox and extend the hash chain. Call inside the same transaction as the state change."""
     event_id = new_id("evt")
+    occurred_at = now_iso()
+    payload_json = json.dumps(payload, default=str)
     conn.execute(
         "INSERT INTO outbox (event_id, event_type, aggregate_id, payload_json, occurred_at) VALUES (?,?,?,?,?)",
-        (event_id, str(event_type), aggregate_id, json.dumps(payload, default=str), now_iso()),
+        (event_id, str(event_type), aggregate_id, payload_json, occurred_at),
     )
+    seq = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    prev = conn.execute("SELECT hash FROM audit_chain ORDER BY seq DESC LIMIT 1").fetchone()
+    prev_hash = prev["hash"] if prev else ""
+    digest = chain_hash(prev_hash, event_id, str(event_type), aggregate_id, payload_json, occurred_at)
+    conn.execute("INSERT INTO audit_chain (seq, prev_hash, hash) VALUES (?,?,?)", (seq, prev_hash, digest))
     return event_id
+
+
+def verify_audit_chain(conn: sqlite3.Connection) -> tuple[bool, int | None]:
+    """Walk the outbox in seq order. Returns (ok, first bad seq). An empty log is intact."""
+    rows = conn.execute(
+        "SELECT o.seq, o.event_id, o.event_type, o.aggregate_id, o.payload_json, o.occurred_at,"
+        " a.prev_hash, a.hash FROM outbox o LEFT JOIN audit_chain a ON a.seq = o.seq ORDER BY o.seq"
+    ).fetchall()
+    prev = ""
+    for row in rows:
+        if row["hash"] is None:
+            return False, int(row["seq"])
+        expected = chain_hash(prev, row["event_id"], row["event_type"], row["aggregate_id"],
+                              row["payload_json"], row["occurred_at"])
+        if row["prev_hash"] != prev or row["hash"] != expected:
+            return False, int(row["seq"])
+        prev = row["hash"]
+    return True, None
 
 
 def wipe_all(conn: sqlite3.Connection) -> None:

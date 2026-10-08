@@ -14,7 +14,7 @@ from graphlib import TopologicalSorter
 
 from agentledger.analytics.ingest import ingest
 from agentledger.config import SQL_DIR
-from agentledger.db import connect, init_db, new_id, now_iso
+from agentledger.db import connect, init_db, new_id, now_iso, verify_audit_chain
 
 TaskFn = Callable[[sqlite3.Connection, str], int]
 
@@ -55,6 +55,14 @@ def quality_checks(conn: sqlite3.Connection, run_id: str) -> int:
             " VALUES (?,?,?,?,?)",
             (run_id, name.strip(), violations, int(violations == 0), now_iso()),
         )
+    ok, bad = verify_audit_chain(conn)
+    violations = 0 if ok else (bad or 1)
+    failed += violations > 0
+    conn.execute(
+        "INSERT OR REPLACE INTO analytics.dq_results (run_id, check_name, violations, passed, checked_at)"
+        " VALUES (?,?,?,?,?)",
+        (run_id, "audit_chain_intact", violations, int(violations == 0), now_iso()),
+    )
     return failed
 
 
