@@ -53,6 +53,7 @@ class BuyerAgent:
         self.platform = platform_url
         self.log = log
         self.agent_key = ""
+        self.price_weight = 0.3
 
     def _auth(self) -> dict[str, str]:
         return {"X-Agent-Key": self.agent_key}
@@ -76,7 +77,8 @@ class BuyerAgent:
 
         # 1. discovery
         r = self.http.get(f"{self.platform}/registry/search",
-                          params={"capability": str(task.capability), "max_price_minor": max_price})
+                          params={"capability": str(task.capability), "max_price_minor": max_price,
+                                  "price_weight": self.price_weight})
         cards = [RankedCard.model_validate(c) for c in r.json()]
         if not cards:
             p.notes.append(f"no seller under {max_price} (tier {tier})")

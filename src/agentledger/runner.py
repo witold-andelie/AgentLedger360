@@ -98,11 +98,38 @@ class Market:
             expired = self.router.post(f"{self.platform_url}/orders/expire")
             if expired.status_code != 200:
                 expired.raise_for_status()
+            self._load_policy()
             if self.mode == "llm" and not force_rule:
-                return self._llm_round(symbols, as_of, on_start)
-            return [self.buyer.acquire(TaskSpec(capability=Capability.SIGNAL_5D, symbol=s.strip().upper(),
-                                                as_of=as_of))
-                    for s in symbols if s.strip()]
+                purchases = self._llm_round(symbols, as_of, on_start)
+            else:
+                purchases = [self.buyer.acquire(TaskSpec(capability=Capability.SIGNAL_5D, symbol=s.strip().upper(),
+                                                        as_of=as_of))
+                             for s in symbols if s.strip()]
+            self._learn()
+            return purchases
+
+    def _load_policy(self) -> None:
+        from agentledger.agents.learning import load_buyer_policy
+        from agentledger.db import connect
+
+        conn = connect(self.settings)
+        try:
+            policy = load_buyer_policy(conn, self.buyer.agent_id)
+        finally:
+            conn.close()
+        self.buyer.price_weight = float(policy["price_weight"])
+
+    def _learn(self) -> None:
+        from agentledger.agents.learning import update_buyer_policy
+        from agentledger.db import connect, transaction
+
+        conn = connect(self.settings)
+        try:
+            with transaction(conn):
+                policy = update_buyer_policy(conn, self.buyer.agent_id)
+        finally:
+            conn.close()
+        self.buyer.price_weight = float(policy["price_weight"])
 
     def _llm_round(self, symbols: list[str], as_of: date | None,
                    on_start: Callable[[str], None] | None) -> list[Purchase]:

@@ -18,6 +18,22 @@ CREATE TABLE IF NOT EXISTS deliveries (
     received_at       TEXT NOT NULL
 );
 
+-- Seller blurbs are not part of the frozen agents table. The buyer tool clips them before the model sees them.
+CREATE TABLE IF NOT EXISTS agent_profiles (
+    agent_id    TEXT PRIMARY KEY REFERENCES agents(agent_id),
+    description TEXT NOT NULL DEFAULT ''
+);
+
+-- Learned buyer preference: how much price is allowed to outweigh reputation. Bounded, one row per buyer.
+CREATE TABLE IF NOT EXISTS buyer_policy (
+    agent_id      TEXT PRIMARY KEY,
+    price_weight  REAL NOT NULL,
+    observations  INTEGER NOT NULL DEFAULT 0,
+    last_seq      INTEGER NOT NULL DEFAULT 0,
+    reason        TEXT NOT NULL DEFAULT '',
+    updated_at    TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS audit_chain (
     seq        INTEGER PRIMARY KEY REFERENCES outbox(seq),
     prev_hash  TEXT NOT NULL,

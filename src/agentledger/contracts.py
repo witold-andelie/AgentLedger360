@@ -41,6 +41,7 @@ class EventType(StrEnum):
     DISPUTE_RESOLVED = "dispute.resolved"
     PAYMENT_REFUNDED = "payment.refunded"
     REPUTATION_UPDATED = "reputation.updated"
+    POLICY_LEARNED = "policy.learned"          # buyer price-vs-reputation weight moved
     LLM_USAGE = "llm.usage"                    # one per LLM call: tokens + cost (agents/accounting.py)
     AGENT_RUN_FINISHED = "agent.run.finished"  # one per agent run: totals + outcome
 

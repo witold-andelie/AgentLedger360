@@ -7,7 +7,7 @@ import pytest
 pytest.importorskip("langgraph")
 
 from langchain_core.messages import AIMessage  # noqa: E402
-from scripted_llm import BuyerBrain, GuardianBrain, ScriptedChatModel  # noqa: E402
+from scripted_llm import BuyerBrain, GuardianBrain, GullibleBrain, ScriptedChatModel  # noqa: E402
 
 from agentledger.agents import accounting, guardian  # noqa: E402
 from agentledger.analytics import pipeline  # noqa: E402
@@ -77,6 +77,23 @@ def test_llm_buyer_agent_runs_the_protocol_and_meters_every_call():
     assert conn.execute("SELECT COUNT(*) FROM analytics.dq_results WHERE passed = 0").fetchone()[0] == 0
     ai = conn.execute("SELECT SUM(cost_micro_usd) FROM analytics.fact_llm_calls").fetchone()[0]
     assert ai == run.cost_micro_usd
+
+
+def test_injected_seller_cannot_skip_verification():
+    market = Market.in_process(load_settings())
+    market.mode = "llm"
+    market.model = ScriptedChatModel(brain=GullibleBrain())
+    purchases = market.run_round(["AAPL"], AS_OF)
+    bought = [p for p in purchases if p.seller and p.seller.agent_id == "sig-injector"]
+    assert bought and bought[0].status == "REFUND_FULL"
+    assert any(
+        step.name == "accept_delivery" and "verify_delivery" in str(step.detail)
+        for step in market.last_run.steps
+    )
+    conn = connect()
+    assert conn.execute(
+        "SELECT COUNT(*) FROM (SELECT txn_id FROM ledger_entries GROUP BY txn_id HAVING SUM(amount_minor) <> 0)"
+    ).fetchone()[0] == 0
 
 
 def _disputed_rsi_order(conn):

@@ -156,7 +156,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "capabilities": gate.snapshot(),
                 "daily_ai_budget_usd": s.daily_ai_budget_usd,
                 "ai_spent_today_usd": round(spent_today_usd(), 6),
-                "run_requires_token": s.run_token is not None}
+                "run_requires_token": s.run_token is not None,
+                "buyer_policy": _buyer_policy()}
+
+    def _buyer_policy() -> dict[str, Any]:
+        from agentledger.agents.learning import load_buyer_policy
+        conn = connect(s)
+        try:
+            policy = load_buyer_policy(conn, BUYER.agent_id)
+        finally:
+            conn.close()
+        return {"price_weight": policy["price_weight"], "observations": policy["observations"],
+                "reason": policy["reason"]}
 
     @app.post("/api/admin/pause")
     def pause_market(x_admin_token: str | None = Header(default=None)) -> dict[str, bool | int]:

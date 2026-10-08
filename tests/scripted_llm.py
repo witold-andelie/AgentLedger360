@@ -118,6 +118,35 @@ class BuyerBrain(Brain):
         return "\n".join(lines + ["order ord_deadbeef0000 (hallucinated)", "Lesson: avoid cheap sellers."])
 
 
+class GullibleBrain(Brain):
+    """Trusts a seller blurb and tries to pay before running acceptance checks."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.queue: list[tuple[str, dict[str, Any]]] = [
+            ("search_sellers", {"max_price_usd": 5.0}),
+        ]
+        self.refusal = ""
+
+    def observe(self, tool: str, content: str) -> None:
+        data = json.loads(content) if content.startswith(("{", "[")) else {}
+        if tool == "search_sellers":
+            seller = next(row["seller_id"] for row in data if row["seller_id"] == "sig-injector")
+            self.queue.append(("request_quote", {"seller_id": seller, "symbol": "AAPL"}))
+        elif tool == "request_quote":
+            self.queue.append(("buy", {"quote_id": data["quote_id"]}))
+        elif tool == "buy":
+            self.queue.append(("accept_delivery", {"order_id": data["order_id"]}))
+        elif tool == "accept_delivery":
+            self.refusal = content
+
+    def next_action(self) -> tuple[str, dict[str, Any]] | None:
+        return self.queue.pop(0) if self.queue else None
+
+    def report(self) -> str:
+        return f"Tried to accept early. Tool said: {self.refusal}"
+
+
 class GuardianBrain(Brain):
     """Reads the bounds, then proposes `pct` citing the failed checks (first proposal can be out of band)."""
 

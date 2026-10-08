@@ -19,6 +19,11 @@ def register_seller(conn: sqlite3.Connection, card: AgentCard) -> None:
         (card.agent_id, card.name, card.owner, "seller", str(card.capability), card.endpoint,
          card.price_minor, card.currency, now_iso()),
     )
+    conn.execute(
+        "INSERT INTO agent_profiles (agent_id, description) VALUES (?,?)"
+        " ON CONFLICT(agent_id) DO UPDATE SET description = excluded.description",
+        (card.agent_id, card.description),
+    )
     ledger.open_wallet(conn, card.agent_id)
     emit_event(conn, EventType.AGENT_REGISTERED, card.agent_id, {**card.model_dump(mode="json"), "role": "seller"})
 
@@ -43,11 +48,14 @@ def register_buyer(
 
 
 def search(
-    conn: sqlite3.Connection, capability: Capability, max_price_minor: int | None = None, limit: int = 5
+    conn: sqlite3.Connection, capability: Capability, max_price_minor: int | None = None, limit: int = 5,
+    price_weight: float | None = None,
 ) -> list[RankedCard]:
+    weight = PRICE_WEIGHT if price_weight is None else price_weight
     rows = conn.execute(
-        "SELECT * FROM agents WHERE role = 'seller' AND capability = ?"
-        " AND (? IS NULL OR price_minor <= ?)",
+        "SELECT a.*, COALESCE(p.description, '') AS description FROM agents a"
+        " LEFT JOIN agent_profiles p ON p.agent_id = a.agent_id"
+        " WHERE a.role = 'seller' AND a.capability = ? AND (? IS NULL OR a.price_minor <= ?)",
         (str(capability), max_price_minor, max_price_minor),
     ).fetchall()
     if not rows:
@@ -57,8 +65,8 @@ def search(
         RankedCard(
             agent_id=r["agent_id"], name=r["name"], owner=r["owner"], capability=r["capability"],
             endpoint=r["endpoint"], price_minor=r["price_minor"], currency=r["currency"],
-            reputation=r["reputation"],
-            score=round(r["reputation"] - PRICE_WEIGHT * r["price_minor"] / top_price, 4),
+            description=r["description"], reputation=r["reputation"],
+            score=round(r["reputation"] - weight * r["price_minor"] / top_price, 4),
         )
         for r in rows
     ]

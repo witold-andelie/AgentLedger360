@@ -35,6 +35,13 @@ export default function AgentHeader({ health }) {
           <dd>{t('Buyer (procurement) + Guardian (disputes)')}</dd>
         </div>
       </dl>
+      {health?.buyer_policy && (
+        <p className="kpi-hint">
+          {t('Buyer policy')}: {t('price weight')} {Number(health.buyer_policy.price_weight).toFixed(2)}
+          {' '}({health.buyer_policy.observations} {t('rounds learned')}
+          {health.buyer_policy.reason ? `, ${t('latest reason')}: ${health.buyer_policy.reason}` : ''})
+        </p>
+      )}
       {price && <p className="kpi-hint">{t('Price source')}: {price.source} · {t('cost figures are estimates')}</p>}
       <CapabilityLine health={health} />
     </section>

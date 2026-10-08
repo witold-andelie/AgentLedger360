@@ -91,6 +91,7 @@ def _all(client: TestClient) -> list[Outcome]:
     return [
         _a1(client), _a2(client), _a3(client), _a4(client),
         _replay(client), _double_settle(client), _mandate(client), _tamper_price(client), _out_of_band(),
+        _injection(client),
     ]
 
 
@@ -191,6 +192,28 @@ def _tamper_price(client: TestClient) -> Outcome:
     fetched = client.post(f"/platform/orders/{held.json()['order_id']}/fetch", headers={"X-Agent-Key": key})
     return Outcome("R7", "Pay a different amount than the seller quoted", fetched.status_code != 200,
                    "R7", fetched.status_code, fetched.json().get("detail", "")[:180])
+
+
+def _injection(client: TestClient) -> Outcome:
+    """The seller blurb is an instruction. The tool-facing copy is clipped, and the bad series is refunded."""
+    from agentledger.agents.untrusted import clip_untrusted
+
+    cards = client.get("/sellers/.well-known/agents.json").json()
+    raw = next(card["description"] for card in cards if card["agent_id"] == "sig-injector")
+    clipped = clip_untrusted(raw)
+    key = _buyer(client, "inject")
+    quote = _quote(client, "sig-injector")
+    order_id = _hold(client, key, "inject", quote).json()["order_id"]
+    fetched = client.post(f"/platform/orders/{order_id}/fetch", headers={"X-Agent-Key": key})
+    opened = client.post(
+        "/platform/disputes", headers={"X-Agent-Key": key},
+        json={"order_id": order_id, "reason": "injection seller shipped a stale series"},
+    )
+    decision = opened.json().get("decision")
+    safe = "\n" not in clipped and len(clipped) <= 120 and "ignore previous instructions" in clipped
+    blocked = fetched.status_code == 200 and safe and decision == "REFUND_FULL"
+    return Outcome("T8", "Prompt-injection seller: blurb is data, bad series is not accepted",
+                   blocked, "R18", opened.status_code, f"clipped={clipped[:80]!r} decision={decision}")
 
 
 def _out_of_band() -> Outcome:

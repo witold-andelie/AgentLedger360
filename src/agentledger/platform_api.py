@@ -118,9 +118,14 @@ def create_app(settings: Settings | None = None, operator_token: str = "",
         return result
 
     @app.get("/registry/search")
-    def search(capability: Capability, max_price_minor: int | None = None,
+    def search(capability: Capability, max_price_minor: int | None = None, price_weight: float | None = None,
                conn: sqlite3.Connection = Depends(get_conn)) -> list[RankedCard]:
-        return registry.search(conn, capability, max_price_minor)
+        return registry.search(conn, capability, max_price_minor, price_weight=price_weight)
+
+    @app.get("/registry/policy/{agent_id}")
+    def buyer_policy(agent_id: str, conn: sqlite3.Connection = Depends(get_conn)) -> dict[str, object]:
+        from agentledger.agents.learning import load_buyer_policy
+        return load_buyer_policy(conn, agent_id)
 
     @app.get("/wallets/{agent_id}")
     def wallet(agent_id: str, conn: sqlite3.Connection = Depends(get_conn)) -> dict[str, int | str | None]:
