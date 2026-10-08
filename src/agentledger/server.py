@@ -167,7 +167,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "daily_ai_budget_usd": s.daily_ai_budget_usd,
                 "ai_spent_today_usd": round(spent_today_usd(), 6),
                 "run_requires_token": s.run_token is not None,
-                "buyer_policy": _buyer_policy()}
+                "buyer_policy": _buyer_policy(),
+                "payment_rail": _payment_rail()}
+
+    def _payment_rail() -> str:
+        from agentledger.economy.rails import rail_name
+        return rail_name()
 
     def _buyer_policy() -> dict[str, Any]:
         from agentledger.agents.learning import load_buyer_policy

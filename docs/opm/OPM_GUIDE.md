@@ -147,7 +147,7 @@ In an in-zoomed diagram, processes **from top to bottom = time order** (the orde
 |---|---|---|---|
 | Agent Card / Quote / Receipt / Deliverable / Quality Report / Decision | object | `src/agentledger/contracts.py` | A+B (frozen) |
 | Order (7 states) | object | `contracts.OrderStatus`, `core.orders`, `economy/escrow.py` | A |
-| Money / Ledger | object | `economy/ledger.py`, `core.ledger_entries` | A |
+| Money / Ledger / Payment rail | object | `economy/rails.py` (`SimulatedLedgerRail`, optional `StripeTestRail`), `economy/ledger.py` | A |
 | Registry / Reputation | object | `economy/registry.py`, `core.agents` | A |
 | Survival Tier / Buyer Agent | object | `agents/buyer.py` | A |
 | Seller Agents | object | `sellers/catalog.py` (B), `sellers/app.py` (A: 402 paywall) | A/B |

@@ -122,7 +122,7 @@ sh scripts/check_compat.sh                                            # macOS/Li
 | T8 | 提示词注入防护 + 恶意卖家 | P1 | S–M | ✅ | 2026-10-08，`sig-injector` + 工具拒绝跳过验收；未花真实 LLM 费用 |
 | T9 | 事后结果核验 | P1 | M | ✅ | 2026-10-08，`economy/outcomes.py`；演示仍用过去的 `as_of` |
 | T10 | 人工复核关卡 | P1 | M | ✅ | 2026-10-08，`review_queue` + 数据质量页；令牌复用重置演示 |
-| T11 | 支付通道接口（场景二） | P2 | M–L | ⬜ | Stripe 测试 key 或 x402 测试网 |
+| T11 | 支付通道接口（场景二） | P2 | M–L | ✅ | 2026-10-08，默认模拟账本；Stripe 仅测试密钥。x402 未做 |
 | T12 | 价格协商 | P2 | M | ⬜ | — |
 | T13 | LLM 卖方 | P2 | M | ⬜ | 可选 |
 | T14 | Claude / DeepSeek 实测 | P2 | S | ⬜ | 需要对应 key |
@@ -256,7 +256,7 @@ sh scripts/check_compat.sh                                            # macOS/Li
 
 ### P2 — 功能扩展（加分项）
 
-- **T11 支付通道接口（组织方场景二）· M–L**：`economy/rails.py` 定义 `PaymentRail` 协议（`hold` / `capture` / `release` / `refund`），现有账本作为 `SimulatedLedgerRail`。可选 `StripeTestRail`：Stripe 测试模式 PaymentIntent 使用 `capture_method=manual`，「授权 = 托管、capture = 结算、cancel/refund = 退款」，语义和我们的托管完全对应，需要 `STRIPE_TEST_SECRET_KEY`。另一个选择是 x402 测试网。界面显示当前使用的通道。
+- **T11 支付通道接口（组织方场景二）· M–L** ✅ 2026-10-08：`economy/rails.py` 的 `PaymentRail`（`hold` / `capture` / `release` / `refund`）。默认 `SimulatedLedgerRail`，托管、结算、取消、退款都走它。`AL_PAYMENT_RAIL=stripe-test` 且 `STRIPE_TEST_SECRET_KEY` 以 `sk_test_` 开头时用 `StripeTestRail`（PaymentIntent `capture_method=manual`：授权=托管、capture=结算、cancel=放回、部分退款=只捕获剩余）。拒绝 live key。界面在智能体控制台显示当前通道。x402 测试网仍未做。
 - **T12 价格协商 · M**：在报价和托管之间加一个协商过程：买方 LLM 可以还价（最多 3 轮），卖方按底价规则回应，最终价格必须 ≤ 钱包授权上限。
 - **T13 LLM 卖方 · M（可选）**：一个用 LLM 写研究短评的卖家，同样走 402 和验收（验收规则需要新设计）。
 - **T14 Claude / DeepSeek 实测 · S**：有 key 时各跑一轮，记录费用；Claude 默认模型是 `claude-opus-5-5`，带服务端拒答回退参数（尚未实测）。
@@ -318,4 +318,5 @@ sh scripts/check_compat.sh                                            # macOS/Li
 | 2026-10-08 | `fee6e62` | 完成 T2（买方密钥 + 清算所 `/fetch` 归档，关闭 A1/A2/A3）和 T3（Attack lab，9 个场景全部被拦）。`DisputeRequest.deliverable` 改为可选。未花 API 费用。 |
 | 2026-10-08 | `fec949b` | 完成 T7（买方价格权重有界学习，`policy.learned`）和 T8（`sig-injector` 注入卖家；工具结果当数据；跳过验收会被拒绝并最终全额退款）。Attack lab 增加 T8 场景。未花 API 费用。 |
 | 2026-10-08 | `2a389e7` | 完成 T9：成交的信号在 5 个交易日之后用 `load_prices(..., as_of=today)` 核验真实方向，写入 `signal.verified` 和独立的已核验信誉；未到期不核验，同一订单只核验一次。智能体页增加「真实命中率」。未花 API 费用。 |
-| 2026-10-08 | 本次提交 | 完成 T10：退款比例在区间边缘、买方被驳回超过 2 次、或金额超过 `AL_CAP_HUMAN_REVIEW_ABOVE_MINOR` 时订单停在 DISPUTED，等运营令牌裁决。越界裁决不动钱。数据质量页有待复核面板。未花 API 费用。 |
+| 2026-10-08 | `5b6abe0` | 完成 T10：退款比例在区间边缘、买方被驳回超过 2 次、或金额超过 `AL_CAP_HUMAN_REVIEW_ABOVE_MINOR` 时订单停在 DISPUTED，等运营令牌裁决。越界裁决不动钱。数据质量页有待复核面板。未花 API 费用。 |
+| 2026-10-08 | 本次提交 | 完成 T11：支付通道接口。默认模拟账本；`stripe-test` 仅接受 `sk_test_` 密钥，把托管映射成手动捕获的 PaymentIntent。界面显示当前通道。未花 API 费用，也没有调用真实 Stripe。 |

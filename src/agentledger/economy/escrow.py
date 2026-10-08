@@ -22,6 +22,7 @@ from agentledger.contracts import (
 )
 from agentledger.db import emit_event, new_id, now_iso
 from agentledger.economy import DomainError, ledger, receipts, registry
+from agentledger.economy.rails import current_rail
 
 S = OrderStatus
 
@@ -84,8 +85,7 @@ def hold(conn: sqlite3.Connection, req: HoldRequest, secret: str) -> PaymentRece
         (order_id, q.quote_id, req.idempotency_key, req.buyer_agent_id, q.seller_agent_id, str(q.task.capability),
          q.task.symbol, q.amount_minor, q.acceptance.model_dump_json(), str(S.FUNDS_HELD), now_iso()),
     )
-    ledger.post(conn, [(wallet["wallet_id"], -q.amount_minor), (ledger.ESCROW, q.amount_minor)],
-                memo=f"hold {order_id}")
+    current_rail().hold(conn, order_id, wallet["wallet_id"], q.amount_minor)
     row = get_order(conn, order_id)
     emit_event(conn, EventType.PAYMENT_HELD, order_id, {**_event_base(row), "status": str(S.FUNDS_HELD)})
     return _receipt(row, secret)
@@ -110,11 +110,8 @@ def mark_delivered(conn: sqlite3.Connection, order_id: str, notice: DeliveryNoti
 
 
 def _pay_seller(conn: sqlite3.Connection, row: sqlite3.Row, amount_minor: int, fee_bps: int) -> int:
-    fee = amount_minor * fee_bps // 10_000
     seller_wallet = ledger.wallet_id_for(row["seller_agent_id"])
-    ledger.post(conn, [(ledger.ESCROW, -amount_minor), (seller_wallet, amount_minor - fee), (ledger.FEES, fee)],
-                memo=f"settle {row['order_id']}")
-    return fee
+    return current_rail().capture(conn, row["order_id"], seller_wallet, amount_minor, fee_bps)
 
 
 def expire_undelivered(conn: sqlite3.Connection, older_than_seconds: int) -> list[OrderView]:
@@ -133,7 +130,7 @@ def expire_undelivered(conn: sqlite3.Connection, older_than_seconds: int) -> lis
         row = _transition(conn, row["order_id"], {S.FUNDS_HELD}, S.CANCELLED,
                           refunded_minor=amount, closed_at=now_iso())
         buyer_wallet = ledger.wallet_id_for(row["buyer_agent_id"])
-        ledger.post(conn, [(ledger.ESCROW, -amount), (buyer_wallet, amount)], memo=f"cancel {row['order_id']}")
+        current_rail().release(conn, row["order_id"], buyer_wallet, amount)
         emit_event(
             conn, EventType.PAYMENT_REFUNDED, row["order_id"],
             {**_event_base(row), "status": str(S.CANCELLED), "refunded_minor": amount, "fee_minor": 0},
@@ -163,10 +160,10 @@ def refund(conn: sqlite3.Connection, order_id: str, refund_minor: int, fee_bps: 
     row = _transition(conn, order_id, {S.DISPUTED}, S.REFUNDED if full else S.PARTIALLY_REFUNDED,
                       refunded_minor=refund_minor, closed_at=now_iso())
     buyer_wallet = ledger.wallet_id_for(row["buyer_agent_id"])
-    ledger.post(conn, [(ledger.ESCROW, -refund_minor), (buyer_wallet, refund_minor)], memo=f"refund {order_id}")
-    fee = 0
-    if not full:  # remainder of the escrow goes to the seller
-        fee = _pay_seller(conn, row, row["amount_minor"] - refund_minor, fee_bps)
+    seller_wallet = ledger.wallet_id_for(row["seller_agent_id"])
+    fee = current_rail().refund(
+        conn, order_id, buyer_wallet, seller_wallet, refund_minor, int(row["amount_minor"]), fee_bps,
+    )
     emit_event(conn, EventType.PAYMENT_REFUNDED, order_id,
                {**_event_base(row), "status": row["status"], "refunded_minor": refund_minor, "fee_minor": fee,
                 **(metrics or {})})

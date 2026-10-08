@@ -63,6 +63,13 @@ CREATE TABLE IF NOT EXISTS review_queue (
     rationale     TEXT
 );
 
+-- External authorization id when the payment rail is not the local ledger (Stripe test mode).
+CREATE TABLE IF NOT EXISTS payment_authorizations (
+    order_id     TEXT PRIMARY KEY,
+    external_id  TEXT NOT NULL,
+    rail         TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS audit_chain (
     seq        INTEGER PRIMARY KEY REFERENCES outbox(seq),
     prev_hash  TEXT NOT NULL,

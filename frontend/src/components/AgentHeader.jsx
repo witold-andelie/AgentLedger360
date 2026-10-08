@@ -64,6 +64,7 @@ function CapabilityLine({ health }) {
         {' · '}
         {t(caps.open_funding ? 'Open funding on' : 'Open funding off')}
         {health.ai_spent_today_usd != null && ` · ${t('AI spent today')} $${Number(health.ai_spent_today_usd).toFixed(2)} / $${Number(health.daily_ai_budget_usd).toFixed(2)}`}
+        {health.payment_rail && ` · ${t('Payment rail')}: ${t(health.payment_rail === 'stripe-test' ? 'Stripe test mode' : 'Simulated ledger')}`}
       </span>
     </div>
   )
