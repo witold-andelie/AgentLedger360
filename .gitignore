@@ -1,0 +1,13 @@
+# Private planning doc: keep local only, never push
+AgentLedger360_Case02_Architecture_Python311_313.md
+
+__pycache__/
+*.pyc
+.venv*/
+.pytest_cache/
+.ruff_cache/
+var/
+data/cache/
+.env
+*.egg-info/
+dist/

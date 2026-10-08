@@ -1,0 +1,637 @@
+// =====================================================================================================
+// AgentLedger 360 - OPM (Object-Process Methodology, ISO 19450) rule-framework diagram
+// Render:  dot -Tsvg docs/opm/agentledger_opm.dot -o docs/opm/agentledger_opm.svg
+// Companion text (OPL sentences, code map, rules): docs/opm/OPM_GUIDE.md  -- keep both in sync.
+//
+// OPD hierarchy
+//   SD   System Diagram ............ the system function and its environment
+//   SD1  in-zoom "Trading Market Intelligence"   (buyer <-> sellers <-> clearing house)
+//   SD2  in-zoom "Resolving Dispute"             (deterministic adjudication)
+//   SD3  in-zoom "Producing Analytics"           (outbox -> warehouse -> API -> frontend)
+//   SD4  in-zoom "Developing & Deploying"        (two laptops, 3.11/3.13 gate, Render)
+//   SD5  unfold  "Agent Reasoning"               (LangGraph plan -> react -> reflect, token meter, budgets)
+//   R    Rules table (invariants + enforcing code); each process label carries its rule tags, e.g. [R2 R5]
+//
+// Notation used here (see the Legend cluster)
+//   object  = rectangle (green border)        process = ellipse (blue border)
+//   state   = rounded box inside its object   physical thing = double border, environmental = dashed
+//   consumption / result = arrow into / out of a process      effect = two-headed arrow
+//   instrument = open-circle end (white lollipop)              agent (human) = filled-circle end
+//   condition = label "c", event = label "e", invocation = bold blue "invokes" arrow
+//   aggregation = black triangle, exhibition = double triangle, generalization = white triangle
+//   Every thing carries the code location that implements it (small grey text).
+// =====================================================================================================
+
+digraph AgentLedger360_OPM {
+  graph [rankdir=TB, compound=true, newrank=true, fontname="Helvetica", fontsize=12, nodesep=0.35,
+         ranksep=0.45, pad=0.3, labeljust=l, label=<<B>AgentLedger 360 - OPM rule framework</B><BR/><FONT POINT-SIZE="10">Every process carries its implementing module. Tags like [R2 R5] bind a process to the rules table. Read SD first, then follow the dashed "in-zoomed in" edges.</FONT>>, labelloc=t];
+  node  [fontname="Helvetica", fontsize=11, penwidth=1.6];
+  edge  [fontname="Helvetica", fontsize=9, color="#455A64", arrowsize=0.8];
+
+  // ---------- style macros (Graphviz has no macros: copy these attribute sets) ----------
+  // object:      shape=box color="#2E7D32"
+  // process:     shape=ellipse color="#1565C0"
+  // physical:    peripheries=2          environmental: style=dashed
+  // instrument:  arrowhead=odot         agent: arrowhead=dot
+  // effect:      dir=both               condition: label="c"  event: label="e"
+
+  // =================================================================================================
+  // LEGEND
+  // =================================================================================================
+  subgraph cluster_legend {
+    label=<<B>Legend</B>>; style="rounded,filled"; fillcolor="#FAFAFA"; color="#B0BEC5";
+    lg_obj   [shape=box, color="#2E7D32", label="Object (informatical)"];
+    lg_phys  [shape=box, color="#2E7D32", peripheries=2, label="Physical object"];
+    lg_env   [shape=box, color="#2E7D32", style=dashed, label="Environmental object"];
+    lg_proc  [shape=ellipse, color="#1565C0", label="Process"];
+    lg_obj2  [shape=box, color="#2E7D32", label="Object"];
+    lg_proc2 [shape=ellipse, color="#1565C0", label="Process "];
+    lg_obj3  [shape=box, color="#2E7D32", label="Object "];
+    lg_rule  [shape=ellipse, color="#1565C0", label=<Process<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">implementing module</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R2 R5] governing rules</FONT>>];
+    lg_inst  [shape=box, color="#2E7D32", label="Object  "];
+    lg_cond  [shape=ellipse, color="#1565C0", label="Process  "];
+    lg_evt   [shape=ellipse, color="#1565C0", label="Process   "];
+    lg_agg   [shape=triangle, style=filled, fillcolor=black, label="", width=0.22, height=0.2];
+    lg_whole [shape=box, color="#2E7D32", label="Whole"];
+    lg_part  [shape=box, color="#2E7D32", label="Part"];
+    lg_obj -> lg_proc2  [arrowhead=odot, label="instrument"];
+    lg_phys -> lg_proc2 [arrowhead=dot, label="agent (human)"];
+    lg_obj2 -> lg_proc  [label="consumption"];
+    lg_proc -> lg_obj3  [label="result"];
+    lg_env -> lg_proc   [dir=both, label="effect"];
+    lg_inst -> lg_cond  [arrowhead=odot, label="c = condition"];
+    lg_cond -> lg_evt   [style=bold, color="#1565C0", arrowhead=vee, label="invokes"];
+    lg_whole -> lg_agg  [arrowhead=none];
+    lg_agg -> lg_part   [arrowhead=none, label="aggregation"];
+  }
+
+  // =================================================================================================
+  // SD - SYSTEM DIAGRAM
+  // =================================================================================================
+  subgraph cluster_SD {
+    label=<<B>SD - System Diagram</B>  <FONT POINT-SIZE="10">function: agents buy verified market intelligence with auditable, simulated money</FONT>>;
+    style=rounded; color="#1565C0";
+
+    sd_jury    [shape=box, color="#2E7D32", peripheries=2, style=dashed, label=<Hackathon Jury &amp; SAP Interviewer<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">beneficiary (environment)</FONT>>];
+    sd_team    [shape=box, color="#2E7D32", peripheries=2, label=<Dev Team<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">Dev A (laptop A) + Dev B (laptop B)</FONT>>];
+    sd_buyer   [shape=box, color="#2E7D32", label=<Buyer Agent<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">agents/buyer.py</FONT>>];
+    sd_sellers [shape=box, color="#2E7D32", label=<Seller Agents (6)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">sellers/catalog.py, sellers/app.py</FONT>>];
+    sd_house   [shape=box, color="#2E7D32", label=<Clearing House<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">platform_api.py + economy/</FONT>>];
+    sd_oracle  [shape=box, color="#2E7D32", style=dashed, label=<Price Oracle<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">market/data.py (synthetic | yfinance)</FONT>>];
+    sd_llm     [shape=box, color="#2E7D32", style=dashed, label=<LLM Provider (Mistral default | Claude | DeepSeek)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">agents/llm.py, AL_AGENT_MODE</FONT>>];
+    sd_cost    [shape=box, color="#2E7D32", label=<AI Cost (tokens, micro-USD)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">agents/accounting.py, telemetry.py</FONT>>];
+    sd_ledger  [shape=box, color="#2E7D32", label=<Double-entry Ledger<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">core.ledger_entries</FONT>>];
+    sd_mi      [shape=box, color="#2E7D32", label=<Verified Market Intelligence<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">contracts.Deliverable + QualityReport</FONT>>];
+    sd_outbox  [shape=box, color="#2E7D32", label=<Event Log (Outbox)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">core.outbox</FONT>>];
+    sd_wh      [shape=box, color="#2E7D32", label=<Analytics Warehouse &amp; KPIs<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">analytics.* , sql/</FONT>>];
+    sd_app     [shape=box, color="#2E7D32", label=<Running Web App<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">server.py + frontend/ on Render</FONT>>];
+
+    sd_trade   [shape=ellipse, color="#1565C0", penwidth=2.4, label=<<B>Trading Market Intelligence</B><BR/><FONT POINT-SIZE="9" COLOR="#607D8B">runner.Market.run_round</FONT>>];
+    sd_analyt  [shape=ellipse, color="#1565C0", penwidth=2.4, label=<<B>Producing Analytics</B><BR/><FONT POINT-SIZE="9" COLOR="#607D8B">analytics/pipeline.run</FONT>>];
+    sd_devops  [shape=ellipse, color="#1565C0", penwidth=2.4, label=<<B>Developing &amp; Deploying</B><BR/><FONT POINT-SIZE="9" COLOR="#607D8B">scripts/, Dockerfile, render.yaml</FONT>>];
+
+    sd_buyer   -> sd_trade  [arrowhead=odot];
+    sd_sellers -> sd_trade  [arrowhead=odot];
+    sd_house   -> sd_trade  [arrowhead=odot];
+    sd_oracle  -> sd_trade  [arrowhead=odot];
+    sd_llm     -> sd_trade  [arrowhead=odot, label="c: key set"];
+    sd_trade   -> sd_cost   [label="metered"];
+    sd_cost    -> sd_analyt [arrowhead=odot];
+    sd_trade   -> sd_ledger [dir=both, label="postings"];
+    sd_trade   -> sd_mi;
+    sd_trade   -> sd_outbox;
+    sd_outbox  -> sd_analyt [arrowhead=odot];
+    sd_analyt  -> sd_wh;
+    sd_team    -> sd_devops [arrowhead=dot];
+    sd_devops  -> sd_app;
+    sd_app     -> sd_trade  [arrowhead=odot];
+    sd_app     -> sd_analyt [arrowhead=odot];
+    sd_jury    -> sd_wh     [dir=both, style=dashed, label="reviews KPIs"];
+    sd_jury    -> sd_mi     [dir=both, style=dashed, label="sees outcomes"];
+  }
+
+  // =================================================================================================
+  // SD1 - in-zoom: Trading Market Intelligence   (subprocesses run top -> bottom = time order)
+  // =================================================================================================
+  subgraph cluster_SD1 {
+    label=<<B>SD1 - Trading Market Intelligence (in-zoomed)</B>  <FONT POINT-SIZE="10">one purchase per symbol per round</FONT>>;
+    style=rounded; color="#1565C0";
+
+    // ----- objects with states -----
+    sd1_order [shape=plaintext, label=<
+      <TABLE BORDER="2" COLOR="#2E7D32" CELLBORDER="0" CELLSPACING="3" CELLPADDING="2" BGCOLOR="white">
+        <TR><TD COLSPAN="7"><B>Order</B> <FONT POINT-SIZE="9" COLOR="#607D8B">core.orders, contracts.OrderStatus, economy/escrow.py</FONT></TD></TR>
+        <TR>
+          <TD PORT="held"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>FUNDS_HELD</TD></TR></TABLE></TD>
+          <TD PORT="delivered"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>DELIVERED</TD></TR></TABLE></TD>
+          <TD PORT="completed"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>COMPLETED</TD></TR></TABLE></TD>
+          <TD PORT="disputed"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>DISPUTED</TD></TR></TABLE></TD>
+          <TD PORT="refunded"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>REFUNDED</TD></TR></TABLE></TD>
+          <TD PORT="partial"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>PARTIALLY_REFUNDED</TD></TR></TABLE></TD>
+          <TD PORT="cancelled"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>CANCELLED</TD></TR></TABLE></TD>
+        </TR>
+      </TABLE>>];
+
+    sd1_money [shape=plaintext, label=<
+      <TABLE BORDER="2" COLOR="#2E7D32" CELLBORDER="0" CELLSPACING="3" CELLPADDING="2" BGCOLOR="white">
+        <TR><TD COLSPAN="4"><B>Money</B> (simulated, integer minor units) <FONT POINT-SIZE="9" COLOR="#607D8B">economy/ledger.py</FONT></TD></TR>
+        <TR>
+          <TD PORT="buyer"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>in buyer wallet</TD></TR></TABLE></TD>
+          <TD PORT="escrow"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>in escrow</TD></TR></TABLE></TD>
+          <TD PORT="seller"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>with seller (net of fee)</TD></TR></TABLE></TD>
+          <TD PORT="fees"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>platform fees</TD></TR></TABLE></TD>
+        </TR>
+      </TABLE>>];
+
+    sd1_tier [shape=plaintext, label=<
+      <TABLE BORDER="2" COLOR="#2E7D32" CELLBORDER="0" CELLSPACING="3" CELLPADDING="2" BGCOLOR="white">
+        <TR><TD COLSPAN="4"><B>Survival Tier</B> <FONT POINT-SIZE="9" COLOR="#607D8B">buyer.TIERS (idea: automaton)</FONT></TD></TR>
+        <TR>
+          <TD PORT="normal"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>normal &le;$5</TD></TR></TABLE></TD>
+          <TD PORT="low"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>low_compute &le;$1.50</TD></TR></TABLE></TD>
+          <TD PORT="critical"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>critical &le;$0.50</TD></TR></TABLE></TD>
+          <TD PORT="dead"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>dead (stop)</TD></TR></TABLE></TD>
+        </TR>
+      </TABLE>>];
+
+    sd1_quote [shape=plaintext, label=<
+      <TABLE BORDER="2" COLOR="#2E7D32" CELLBORDER="0" CELLSPACING="3" CELLPADDING="2" BGCOLOR="white">
+        <TR><TD COLSPAN="3"><B>Quote</B> (HTTP 402 body) <FONT POINT-SIZE="9" COLOR="#607D8B">contracts.PaymentRequired</FONT></TD></TR>
+        <TR>
+          <TD PORT="issued"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>issued</TD></TR></TABLE></TD>
+          <TD PORT="expired"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>expired (5 min)</TD></TR></TABLE></TD>
+          <TD PORT="redeemed"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>redeemed</TD></TR></TABLE></TD>
+        </TR>
+      </TABLE>>];
+
+    sd1_report [shape=plaintext, label=<
+      <TABLE BORDER="2" COLOR="#2E7D32" CELLBORDER="0" CELLSPACING="3" CELLPADDING="2" BGCOLOR="white">
+        <TR><TD COLSPAN="2"><B>Quality Report</B> <FONT POINT-SIZE="9" COLOR="#607D8B">contracts.QualityReport, evidence_hash</FONT></TD></TR>
+        <TR>
+          <TD PORT="passed"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>passed</TD></TR></TABLE></TD>
+          <TD PORT="failed"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>failed</TD></TR></TABLE></TD>
+        </TR>
+      </TABLE>>];
+
+    // ----- plain objects -----
+    sd1_card     [shape=box, color="#2E7D32", label=<Agent Card<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">contracts.AgentCard, /.well-known/agents.json</FONT>>];
+    sd1_registry [shape=box, color="#2E7D32", label=<Registry<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">core.agents, economy/registry.py</FONT>>];
+    sd1_rep      [shape=box, color="#2E7D32", label=<Reputation<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">agents.reputation = (ok+1)/(n+2)</FONT>>];
+    sd1_seller   [shape=box, color="#2E7D32", label=<Seller Agent<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">SellerSpec</FONT>>];
+    sd1_exh      [shape=triangle, style=filled, fillcolor=white, peripheries=2, label="", width=0.25, height=0.22];
+    sd1_mandate  [shape=box, color="#2E7D32", label=<Spend Mandate<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">wallets.max_per_order / daily_limit</FONT>>];
+    sd1_wallet   [shape=box, color="#2E7D32", label=<Buyer Wallet<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">w_pm-alpha</FONT>>];
+    sd1_exh2     [shape=triangle, style=filled, fillcolor=white, peripheries=2, label="", width=0.25, height=0.22];
+    sd1_ranked   [shape=box, color="#2E7D32", label=<Ranked Cards<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">score = rep - 0.3*price/max</FONT>>];
+    sd1_terms    [shape=box, color="#2E7D32", label=<Acceptance Criteria<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">schema, min_rows, freshness, hit_rate, rank_ic</FONT>>];
+    sd1_receipt  [shape=box, color="#2E7D32", label=<Payment Receipt (HMAC)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">economy/receipts.py, X-Payment header</FONT>>];
+    sd1_deliv    [shape=box, color="#2E7D32", label=<Deliverable<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">rows + content_hash + seller HMAC</FONT>>];
+    sd1_oracle   [shape=box, color="#2E7D32", style=dashed, label=<Price Oracle<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">market/data.load_prices</FONT>>];
+    sd1_outbox   [shape=box, color="#2E7D32", label=<Outbox Event<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">db.emit_event, contracts.EventType</FONT>>];
+    sd1_llm      [shape=box, color="#2E7D32", style=dashed, label=<LLM (buyer agent brain)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">agents/buyer_agent.py, see SD5</FONT>>];
+    sd1_buyer    [shape=box, color="#2E7D32", label=<Buyer Agent<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">BuyerAgent.acquire</FONT>>];
+
+    // ----- subprocesses, in time order -----
+    p1  [shape=ellipse, color="#1565C0", label=<1 Publishing Agent Cards<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">sellers/app.py agent_cards()</FONT>>];
+    p2  [shape=ellipse, color="#1565C0", label=<2 Registering<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">runner.bootstrap, registry.register_*</FONT>>];
+    p3  [shape=ellipse, color="#1565C0", label=<3 Funding Buyer (once)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">ledger.fund</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R5]</FONT>>];
+    p4  [shape=ellipse, color="#1565C0", label=<4 Assessing Tier<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">BuyerAgent.tier</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R6]</FONT>>];
+    p5  [shape=ellipse, color="#1565C0", label=<5 Discovering &amp; Ranking<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">GET /registry/search, registry.search</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R1]</FONT>>];
+    p6  [shape=ellipse, color="#1565C0", label=<6 Quoting (HTTP 402)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">POST /agents/{id}/tasks, no X-Payment</FONT>>];
+    p7  [shape=ellipse, color="#1565C0", label=<7 Holding in Escrow<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">POST /escrow/hold, escrow.hold</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R2 R5 R6]</FONT>>];
+    p8  [shape=ellipse, color="#1565C0", label=<8 Delivering (paid)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">POST /agents/{id}/tasks + X-Payment; receipts.sign_content</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R5 R7]</FONT>>];
+    p9  [shape=ellipse, color="#1565C0", label=<9 Recording Delivery<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">escrow.mark_delivered, receipts.verify_content</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R4 R7]</FONT>>];
+    p10 [shape=ellipse, color="#1565C0", label=<10 Verifying Contract<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">market/quality.evaluate + backtest</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R10]</FONT>>];
+    p11 [shape=ellipse, color="#1565C0", label=<11 Settling<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">POST /orders/{id}/accept, escrow.settle</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R2]</FONT>>];
+    p12 [shape=ellipse, color="#1565C0", penwidth=2.4, label=<<B>12 Resolving Dispute</B><BR/><FONT POINT-SIZE="9" COLOR="#607D8B">POST /disputes, see SD2</FONT>>];
+    p13 [shape=ellipse, color="#1565C0", label=<13 Emitting Events<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">db.emit_event (same txn)</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R3]</FONT>>];
+    p_exp [shape=ellipse, color="#1565C0", label=<Expiring<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">escrow.expire_undelivered</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R2 R4]</FONT>>];
+
+    // order the timeline vertically
+    p1 -> p2 -> p3 -> p4 -> p5 -> p6 -> p7 -> p8 -> p9 -> p10 [style=invis, weight=20];
+    {rank=same; p11; p12;}
+    p10 -> p11 [style=invis]; p10 -> p12 [style=invis];
+
+    // structural
+    sd1_seller -> sd1_exh  [arrowhead=none];
+    sd1_exh    -> sd1_rep  [arrowhead=none, label="exhibits"];
+    sd1_wallet -> sd1_exh2 [arrowhead=none];
+    sd1_exh2   -> sd1_mandate [arrowhead=none, label="exhibits"];
+
+    // procedural links
+    sd1_seller -> p1 [arrowhead=odot];
+    p1 -> sd1_card;
+    sd1_card -> p2 [arrowhead=odot];
+    p2 -> sd1_registry;
+    p2 -> sd1_rep [label="init 0.5"];
+    p3 -> sd1_money:buyer [label="mint from treasury"];
+    sd1_buyer -> p4 [arrowhead=odot];
+    sd1_wallet -> p4 [arrowhead=odot];
+    p4 -> sd1_tier:normal; p4 -> sd1_tier:low; p4 -> sd1_tier:critical; p4 -> sd1_tier:dead;
+    sd1_tier:dead -> p5 [arrowhead=odot, label="c: skip if dead", color="#C62828"];
+    sd1_registry -> p5 [arrowhead=odot];
+    sd1_rep -> p5 [arrowhead=odot];
+    p5 -> sd1_ranked;
+    sd1_llm -> p5 [arrowhead=odot, label="c: AL_AGENT_MODE=llm - chooses steps 5-12 through tools (SD5)"];
+    sd1_ranked -> p6 [arrowhead=odot, label="top card"];
+    p6 -> sd1_quote:issued;
+    p6 -> sd1_terms;
+    sd1_quote:issued -> p7 [arrowhead=odot, label="c: not expired"];
+    sd1_mandate -> p7 [arrowhead=odot, label="c: within mandate"];
+    sd1_money:buyer -> p7;
+    p7 -> sd1_money:escrow;
+    p7 -> sd1_order:held;
+    p7 -> sd1_receipt;
+    sd1_receipt -> p8 [arrowhead=odot, label="c: HMAC valid, amount = quote"];
+    sd1_quote:issued -> p8;
+    p8 -> sd1_quote:redeemed;
+    p8 -> sd1_deliv;
+    sd1_order:held -> p9;
+    p9 -> sd1_order:delivered;
+    sd1_deliv -> p10 [arrowhead=odot];
+    sd1_terms -> p10 [arrowhead=odot];
+    sd1_oracle -> p10 [arrowhead=odot];
+    p10 -> sd1_report:passed;
+    p10 -> sd1_report:failed;
+    sd1_report:passed -> p11 [arrowhead=odot, label="c"];
+    sd1_report:failed -> p12 [arrowhead=odot, label="c"];
+    sd1_order:delivered -> p11;
+    p11 -> sd1_order:completed;
+    sd1_money:escrow -> p11;
+    p11 -> sd1_money:seller;
+    p11 -> sd1_money:fees;
+    p11 -> sd1_rep [dir=both, label="+1 ok"];
+    sd1_order:delivered -> p12;
+    p12 -> sd1_order:disputed [style=dashed, label="via SD2"];
+    p7  -> p13 [style=bold, color="#1565C0", arrowhead=vee, label="invokes"];
+    p9  -> p13 [style=bold, color="#1565C0", arrowhead=vee];
+    p11 -> p13 [style=bold, color="#1565C0", arrowhead=vee];
+    p12 -> p13 [style=bold, color="#1565C0", arrowhead=vee];
+    p13 -> sd1_outbox;
+    sd1_order:held -> p_exp [label="c: undelivered longer than order TTL"];
+    p_exp -> sd1_order:cancelled;
+    sd1_money:escrow -> p_exp;
+    p_exp -> sd1_money:buyer [label="full refund"];
+    p_exp -> sd1_rep [dir=both, label="fail"];
+    p_exp -> p13 [style=bold, color="#1565C0", arrowhead=vee, label="invokes"];
+  }
+
+  // =================================================================================================
+  // SD2 - in-zoom: Resolving Dispute
+  // =================================================================================================
+  subgraph cluster_SD2 {
+    label=<<B>SD2 - Resolving Dispute (in-zoomed)</B>  <FONT POINT-SIZE="10">economy/disputes.py::open_and_resolve - deterministic, LLM-free decision</FONT>>;
+    style=rounded; color="#1565C0";
+
+    sd2_order [shape=plaintext, label=<
+      <TABLE BORDER="2" COLOR="#2E7D32" CELLBORDER="0" CELLSPACING="3" CELLPADDING="2" BGCOLOR="white">
+        <TR><TD COLSPAN="5"><B>Order</B></TD></TR>
+        <TR>
+          <TD PORT="delivered"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>DELIVERED</TD></TR></TABLE></TD>
+          <TD PORT="disputed"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>DISPUTED</TD></TR></TABLE></TD>
+          <TD PORT="completed"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>COMPLETED</TD></TR></TABLE></TD>
+          <TD PORT="refunded"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>REFUNDED</TD></TR></TABLE></TD>
+          <TD PORT="partial"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>PARTIALLY_REFUNDED</TD></TR></TABLE></TD>
+        </TR>
+      </TABLE>>];
+
+    sd2_decision [shape=plaintext, label=<
+      <TABLE BORDER="2" COLOR="#2E7D32" CELLBORDER="0" CELLSPACING="3" CELLPADDING="2" BGCOLOR="white">
+        <TR><TD COLSPAN="3"><B>Decision</B> <FONT POINT-SIZE="9" COLOR="#607D8B">contracts.DisputeDecision</FONT></TD></TR>
+        <TR>
+          <TD PORT="release"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>RELEASE</TD></TR></TABLE></TD>
+          <TD PORT="partial"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>REFUND_PARTIAL (50%)</TD></TR></TABLE></TD>
+          <TD PORT="full"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>REFUND_FULL</TD></TR></TABLE></TD>
+        </TR>
+      </TABLE>>];
+
+    sd2_evid [shape=plaintext, label=<
+      <TABLE BORDER="2" COLOR="#2E7D32" CELLBORDER="0" CELLSPACING="3" CELLPADDING="2" BGCOLOR="white">
+        <TR><TD COLSPAN="2"><B>Evidence</B> <FONT POINT-SIZE="9" COLOR="#607D8B">DisputeRequest.deliverable</FONT></TD></TR>
+        <TR>
+          <TD PORT="valid"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>hash matches</TD></TR></TABLE></TD>
+          <TD PORT="invalid"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>hash mismatch</TD></TR></TABLE></TD>
+        </TR>
+      </TABLE>>];
+
+    sd2_terms   [shape=box, color="#2E7D32", label=<Acceptance Criteria<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">orders.acceptance_json (frozen at hold)</FONT>>];
+    sd2_report  [shape=box, color="#2E7D32", label=<Re-executed Quality Report<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">critical vs performance checks</FONT>>];
+    sd2_money   [shape=box, color="#2E7D32", label=<Escrowed Money<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">w_escrow</FONT>>];
+    sd2_rep     [shape=box, color="#2E7D32", label=<Seller Reputation>];
+    sd2_summary [shape=box, color="#2E7D32", label=<Ruling Proposal<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">contracts.GuardianRuling: decision, refund %, cited checks</FONT>>];
+    sd2_band    [shape=box, color="#2E7D32", label=<Policy Band<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">disputes.policy_band: allowed decision + refund % range</FONT>>];
+    sd2_llm     [shape=box, color="#2E7D32", style=dashed, label=<LLM (guardian brain)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">agents/guardian.py, see SD5</FONT>>];
+    sd2_record  [shape=box, color="#2E7D32", label=<Dispute Record<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">core.disputes + dispute.resolved event</FONT>>];
+
+    q1 [shape=ellipse, color="#1565C0", label=<12.1 Opening<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">_transition DELIVERED-&gt;DISPUTED</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R4]</FONT>>];
+    q2 [shape=ellipse, color="#1565C0", label=<12.2 Checking Evidence Hash<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">canonical_hash(rows) == content_hash</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R8]</FONT>>];
+    q3 [shape=ellipse, color="#1565C0", label=<12.3 Re-executing Acceptance<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">quality.evaluate (adjudicator side)</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R8 R10]</FONT>>];
+    q4 [shape=ellipse, color="#1565C0", label=<12.4 Deciding<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">disputes.validate inside policy band</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R1 R9]</FONT>>];
+    q5 [shape=ellipse, color="#1565C0", label=<12.5 Refunding<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">escrow.refund (+ remainder to seller)</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R2]</FONT>>];
+    q6 [shape=ellipse, color="#1565C0", label=<12.6 Releasing<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">escrow.settle</FONT>>];
+    q7 [shape=ellipse, color="#1565C0", label=<12.7 Updating Reputation<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">registry.record_outcome</FONT>>];
+    q8 [shape=ellipse, color="#1565C0", label=<12.3b Guardian Investigating (LLM)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">guardian.investigate: 7 read-only tools</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R1 R17 R18]</FONT>>];
+    q9 [shape=ellipse, color="#1565C0", label=<12.9 Recording<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">INSERT disputes, emit_event</FONT>>];
+
+    q1 -> q2 -> q3 -> q8 -> q4 [style=invis, weight=20];
+    {rank=same; q5; q6;}
+    q4 -> q5 [style=invis]; q4 -> q6 [style=invis];
+    q5 -> q7 [style=invis]; q7 -> q9 [style=invis];
+
+    sd2_order:delivered -> q1;
+    q1 -> sd2_order:disputed;
+    sd2_evid:valid -> q2 [dir=none];
+    q2 -> sd2_evid:valid;
+    q2 -> sd2_evid:invalid;
+    sd2_evid:invalid -> q4 [arrowhead=odot, label="c: -> RELEASE"];
+    sd2_evid:valid -> q3 [arrowhead=odot, label="c"];
+    sd2_terms -> q3 [arrowhead=odot];
+    q3 -> sd2_report;
+    sd2_report -> q4 [arrowhead=odot];
+    q4 -> sd2_decision:release;
+    q4 -> sd2_decision:partial;
+    q4 -> sd2_decision:full;
+    sd2_decision:partial -> q5 [arrowhead=odot, label="c"];
+    sd2_decision:full -> q5 [arrowhead=odot, label="c"];
+    sd2_decision:release -> q6 [arrowhead=odot, label="c"];
+    sd2_order:disputed -> q5;
+    sd2_order:disputed -> q6;
+    q5 -> sd2_order:refunded;
+    q5 -> sd2_order:partial;
+    q6 -> sd2_order:completed;
+    sd2_money -> q5;
+    sd2_money -> q6;
+    q5 -> q7 [style=bold, color="#1565C0", arrowhead=vee, label="invokes (fail)"];
+    q6 -> q7 [style=bold, color="#1565C0", arrowhead=vee, label="invokes (ok)"];
+    q7 -> sd2_rep [dir=both];
+    sd2_llm -> q8 [arrowhead=odot, label="c: AL_AGENT_MODE=llm"];
+    q3 -> sd2_band;
+    sd2_band -> q8 [arrowhead=odot, label="policy_bounds tool"];
+    sd2_band -> q4 [arrowhead=odot];
+    sd2_report -> q8 [arrowhead=odot];
+    q8 -> sd2_summary;
+    sd2_summary -> q4 [arrowhead=odot, label="c: inside band + cites failed checks, else rule default"];
+    q9 -> sd2_record;
+    // NOTE: the LLM proposal reaches Deciding ONLY through disputes.validate; nothing from the LLM reaches
+    // q5/q6 (money) directly, and an invalid proposal falls back to the band default (rule R1).
+  }
+
+  // =================================================================================================
+  // SD3 - in-zoom: Producing Analytics
+  // =================================================================================================
+  subgraph cluster_SD3 {
+    label=<<B>SD3 - Producing Analytics (in-zoomed)</B>  <FONT POINT-SIZE="10">analytics/pipeline.py DAG; warehouse built ONLY from events</FONT>>;
+    style=rounded; color="#1565C0";
+
+    sd3_outbox [shape=box, color="#2E7D32", label=<Outbox<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">core.outbox (seq, event_id)</FONT>>];
+    sd3_cursor [shape=box, color="#2E7D32", label=<Ingest Cursor<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">analytics.ingest_cursor.last_seq</FONT>>];
+    sd3_raw    [shape=box, color="#2E7D32", label=<Raw Events<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">analytics.raw_events (PK event_id)</FONT>>];
+    sd3_dim    [shape=box, color="#2E7D32", label=<dim_agents<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">sql/marts/dim_agents.sql</FONT>>];
+    sd3_fact   [shape=box, color="#2E7D32", label=<fact_orders<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">sql/marts/fact_orders.sql (window fn)</FONT>>];
+    sd3_views  [shape=box, color="#2E7D32", label=<KPI Views<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">v_customer_360, v_agent_performance,<BR/>v_daily_kpis, v_customer_rfm (002_analytics.sql)</FONT>>];
+    sd3_core   [shape=box, color="#2E7D32", label=<Core OLTP tables<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">ledger_entries, wallets, orders</FONT>>];
+    sd3_dq [shape=plaintext, label=<
+      <TABLE BORDER="2" COLOR="#2E7D32" CELLBORDER="0" CELLSPACING="3" CELLPADDING="2" BGCOLOR="white">
+        <TR><TD COLSPAN="2"><B>DQ Result</B> x11 checks <FONT POINT-SIZE="9" COLOR="#607D8B">sql/quality_checks.sql -&gt; analytics.dq_results</FONT></TD></TR>
+        <TR>
+          <TD PORT="pass"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>PASS (0 violations)</TD></TR></TABLE></TD>
+          <TD PORT="fail"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>FAIL</TD></TR></TABLE></TD>
+        </TR>
+      </TABLE>>];
+    sd3_runs   [shape=box, color="#2E7D32", label=<Pipeline Run Log<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">analytics.pipeline_runs</FONT>>];
+    sd3_json   [shape=box, color="#2E7D32", label=<API JSON<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">/api/summary, /api/events, /api/round</FONT>>];
+    sd3_pages  [shape=box, color="#2E7D32", label=<React Pages<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">frontend/src/pages/* via api.js only</FONT>>];
+    sd3_viewer [shape=box, color="#2E7D32", peripheries=2, style=dashed, label=<Viewer (jury)>];
+
+    a1 [shape=ellipse, color="#1565C0", label=<Ingesting Events<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">analytics/ingest.py (Kafka-shaped)</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R11]</FONT>>];
+    a2 [shape=ellipse, color="#1565C0", label=<Building dim_agents>];
+    a8 [shape=ellipse, color="#1565C0", label=<Building AI cost facts<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">sql/marts/fact_llm_calls.sql</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R11 R17]</FONT>>];
+    sd3_ai [shape=box, color="#2E7D32", label=<fact_llm_calls, fact_agent_runs<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">v_ai_cost_by_agent, v_ai_cost_by_model (003_agents.sql)</FONT>>];
+    a3 [shape=ellipse, color="#1565C0", label=<Building fact_orders<BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R11]</FONT>>];
+    a4 [shape=ellipse, color="#1565C0", label=<Checking Data Quality<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">pipeline.quality_checks</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R12]</FONT>>];
+    a5 [shape=ellipse, color="#1565C0", label=<Logging Run<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">every task, success/failed/upstream_failed</FONT>>];
+    a6 [shape=ellipse, color="#1565C0", label=<Serving API<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">server.py</FONT>>];
+    a7 [shape=ellipse, color="#1565C0", label=<Rendering Dashboard<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">frontend (rules: docs/FRONTEND_RULES.md)</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R14]</FONT>>];
+
+    a1 -> a2 [style=invis, weight=10]; a1 -> a3 [style=invis, weight=10];
+    a1 -> a8 [style=invis, weight=10];
+    {rank=same; a2; a3; a8;}
+    a8 -> a4 [style=invis]; a2 -> a4 [style=invis]; a3 -> a4 [style=invis]; a4 -> a5 [style=invis]; a5 -> a6 [style=invis]; a6 -> a7 [style=invis];
+
+    sd3_outbox -> a1 [arrowhead=odot, label="seq > cursor"];
+    a1 -> sd3_cursor [dir=both];
+    a1 -> sd3_raw [label="INSERT OR IGNORE"];
+    sd3_raw -> a2 [arrowhead=odot];
+    sd3_raw -> a3 [arrowhead=odot];
+    a2 -> sd3_dim [label="rebuild"];
+    a3 -> sd3_fact [label="rebuild"];
+    sd3_raw -> a8 [arrowhead=odot, label="llm.usage, agent.run.finished"];
+    a8 -> sd3_ai [label="rebuild"];
+    sd3_ai -> a4 [arrowhead=odot, label="AI cost reconciliation"];
+    sd3_ai -> a6 [arrowhead=odot];
+    sd3_dim -> sd3_views [arrowhead=odot, style=dashed, label="feeds"];
+    sd3_fact -> sd3_views [arrowhead=odot, style=dashed, label="feeds"];
+    sd3_fact -> a4 [arrowhead=odot];
+    sd3_core -> a4 [arrowhead=odot, label="reconciliation"];
+    a4 -> sd3_dq:pass;
+    a4 -> sd3_dq:fail;
+    a1 -> a5 [style=bold, color="#1565C0", arrowhead=vee, label="invokes"];
+    a5 -> sd3_runs;
+    sd3_views -> a6 [arrowhead=odot];
+    sd3_dq:pass -> a6 [arrowhead=odot];
+    a6 -> sd3_json;
+    sd3_json -> a7 [arrowhead=odot];
+    a7 -> sd3_pages;
+    sd3_viewer -> a7 [arrowhead=dot];
+  }
+
+
+  // =================================================================================================
+  // SD5 - unfold: Agent Reasoning (agents/graph.py), used by the buyer (SD1) and the guardian (SD2)
+  // =================================================================================================
+  subgraph cluster_SD5 {
+    label=<<B>SD5 - Agent Reasoning (unfolded)</B>  <FONT POINT-SIZE="10">LangGraph plan -&gt; react -&gt; reflect (revio pattern); the model chooses, tools and policy decide</FONT>>;
+    style=rounded; color="#1565C0";
+
+    sd5_model  [shape=box, color="#2E7D32", style=dashed, label=<LLM Provider (environment)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">agents/llm.py: Mistral (default) | Claude | OpenAI-compatible</FONT>>];
+    sd5_goal   [shape=box, color="#2E7D32", label=<Goal<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">buyer: symbols + as-of; guardian: disputed order</FONT>>];
+    sd5_tools  [shape=box, color="#2E7D32", label=<Tool Set<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">buyer: check_wallet, search_sellers, request_quote, buy,<BR/>verify_delivery, accept_delivery, open_dispute<BR/>guardian: get_case, check_evidence_hash, rerun_acceptance_checks,<BR/>seller/buyer_track_record, policy_bounds, submit_ruling</FONT>>];
+    sd5_gate   [shape=box, color="#2E7D32", penwidth=2.4, label=<<B>Tool-side Policy Gate</B><BR/><FONT POINT-SIZE="9" COLOR="#607D8B">verify before accept, never accept a failed check,<BR/>2 buys per symbol, hash check, policy band</FONT>>];
+    sd5_msgs   [shape=box, color="#2E7D32", label=<Message History<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">AgentState.messages (every tool_call paired)</FONT>>];
+    sd5_meter  [shape=box, color="#2E7D32", label=<Token Meter<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">accounting.price_for, cost_micro_usd (price source shown)</FONT>>];
+    sd5_events [shape=box, color="#2E7D32", label=<llm.usage + agent.run.finished events<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">telemetry.persist_run -&gt; outbox -&gt; SD3</FONT>>];
+    sd5_budget [shape=plaintext, label=<
+      <TABLE BORDER="2" COLOR="#2E7D32" CELLBORDER="0" CELLSPACING="3" CELLPADDING="2" BGCOLOR="white">
+        <TR><TD COLSPAN="2"><B>Budget</B> <FONT POINT-SIZE="9" COLOR="#607D8B">AL_AGENT_MAX_TOOL_CALLS, AL_AGENT_MAX_COST_USD</FONT></TD></TR>
+        <TR>
+          <TD PORT="within"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>within</TD></TR></TABLE></TD>
+          <TD PORT="exhausted"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>exhausted</TD></TR></TABLE></TD>
+        </TR>
+      </TABLE>>];
+    sd5_run [shape=plaintext, label=<
+      <TABLE BORDER="2" COLOR="#2E7D32" CELLBORDER="0" CELLSPACING="3" CELLPADDING="2" BGCOLOR="white">
+        <TR><TD COLSPAN="4"><B>Agent Run Report</B> <FONT POINT-SIZE="9" COLOR="#607D8B">contracts.AgentRunReport, agent_runs + agent_steps</FONT></TD></TR>
+        <TR>
+          <TD PORT="running"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>running (LIVE)</TD></TR></TABLE></TD>
+          <TD PORT="completed"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>completed</TD></TR></TABLE></TD>
+          <TD PORT="budget"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>budget_stopped</TD></TR></TABLE></TD>
+          <TD PORT="failed"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>failed</TD></TR></TABLE></TD>
+        </TR>
+      </TABLE>>];
+
+    g1 [shape=ellipse, color="#1565C0", label=<Planning<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">graph.plan_node</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R17]</FONT>>];
+    g2 [shape=ellipse, color="#1565C0", penwidth=2.4, label=<<B>Acting (tool loop)</B><BR/><FONT POINT-SIZE="9" COLOR="#607D8B">graph.react_node, max 40 iterations</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R17]</FONT>>];
+    g3 [shape=ellipse, color="#1565C0", label=<Calling Tool<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">errors return as text, never raise</FONT>>];
+    g4 [shape=ellipse, color="#1565C0", label=<Metering<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">RunRecorder.llm_call</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R17]</FONT>>];
+    g5 [shape=ellipse, color="#1565C0", label=<Checking Budget<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">RunRecorder.budget_exhausted</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R17]</FONT>>];
+    g6 [shape=ellipse, color="#1565C0", label=<Reflecting<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">graph.reflect_node: final report</FONT>>];
+    g7 [shape=ellipse, color="#1565C0", label=<Grounding<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">drop order ids not in tool results</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R18]</FONT>>];
+    g8 [shape=ellipse, color="#1565C0", label=<Auto-finalizing<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">buyer_agent.finalize_open_orders</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R4 R18]</FONT>>];
+    g9 [shape=ellipse, color="#1565C0", label=<Persisting Telemetry<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">telemetry.persist_run (one txn)</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R3 R17]</FONT>>];
+
+    g1 -> g2 -> g6 -> g7 -> g8 -> g9 [style=invis, weight=20];
+    {rank=same; g2; g3; g4; g5;}
+
+    sd5_goal -> g1 [arrowhead=odot];
+    sd5_model -> g1 [arrowhead=odot];
+    g1 -> sd5_msgs;
+    g1 -> sd5_run:running;
+    sd5_model -> g2 [arrowhead=odot];
+    sd5_msgs -> g2 [dir=both];
+    g2 -> g3 [style=bold, color="#1565C0", arrowhead=vee, label="invokes per tool_call"];
+    g2 -> g4 [style=bold, color="#1565C0", arrowhead=vee, label="invokes per LLM call"];
+    sd5_tools -> g3 [arrowhead=odot];
+    sd5_gate -> g3 [arrowhead=odot, label="c"];
+    g4 -> sd5_meter [dir=both];
+    g4 -> g5 [style=bold, color="#1565C0", arrowhead=vee, label="invokes"];
+    g5 -> sd5_budget:within;
+    g5 -> sd5_budget:exhausted;
+    sd5_budget:exhausted -> g6 [arrowhead=odot, label="c: stop loop"];
+    sd5_run:running -> g6;
+    g6 -> sd5_run:completed;
+    g6 -> sd5_run:budget [style=dashed];
+    g7 -> sd5_run:completed [dir=both, label="removes ungrounded claims"];
+    sd5_gate -> g8 [arrowhead=odot];
+    sd5_run:completed -> g9 [arrowhead=odot];
+    g9 -> sd5_events;
+  }
+
+  // =================================================================================================
+  // SD4 - in-zoom: Developing & Deploying (who does what, with which gate)
+  // =================================================================================================
+  subgraph cluster_SD4 {
+    label=<<B>SD4 - Developing &amp; Deploying (in-zoomed)</B>  <FONT POINT-SIZE="10">docs/TEAM_PLAN.md - two laptops, one contract, one gate</FONT>>;
+    style=rounded; color="#1565C0";
+
+    sd4_devA   [shape=box, color="#2E7D32", peripheries=2, label=<Dev A + Laptop A<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">Python 3.11 venv (.venv311)</FONT>>];
+    sd4_devB   [shape=box, color="#2E7D32", peripheries=2, label=<Dev B + Laptop B<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">Python 3.13 venv (.venv313)</FONT>>];
+    sd4_contract [shape=box, color="#2E7D32", penwidth=2.4, label=<<B>Frozen Contract</B><BR/><FONT POINT-SIZE="9" COLOR="#607D8B">contracts.py + sql/001_core.sql + EventType payloads</FONT>>];
+    sd4_code   [shape=box, color="#2E7D32", label=<Codebase>];
+    sd4_agg    [shape=triangle, style=filled, fillcolor=black, label="", width=0.25, height=0.22];
+    sd4_partA  [shape=box, color="#2E7D32", label=<Economy part (A)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">economy/, agents/, platform_api.py,<BR/>runner.py, server.py, transport.py</FONT>>];
+    sd4_partB  [shape=box, color="#2E7D32", label=<Market &amp; Analytics part (B)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">market/, sellers/catalog.py, analytics/,<BR/>sql/marts, sql/quality_checks.sql, frontend/</FONT>>];
+    sd4_gate [shape=plaintext, label=<
+      <TABLE BORDER="2" COLOR="#2E7D32" CELLBORDER="0" CELLSPACING="3" CELLPADDING="2" BGCOLOR="white">
+        <TR><TD COLSPAN="2"><B>Compat Gate</B> <FONT POINT-SIZE="9" COLOR="#607D8B">scripts/check_compat.ps1|.sh, .github/workflows/ci.yml</FONT></TD></TR>
+        <TR>
+          <TD PORT="green"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>green on 3.11 AND 3.13</TD></TR></TABLE></TD>
+          <TD PORT="red"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>red</TD></TR></TABLE></TD>
+        </TR>
+      </TABLE>>];
+    sd4_repo   [shape=box, color="#2E7D32", label=<GitHub main branch<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">private outline doc excluded (.gitignore)</FONT>>];
+    sd4_image  [shape=box, color="#2E7D32", label=<Container Image<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">Dockerfile: node build -&gt; python:3.13-slim</FONT>>];
+    sd4_render [shape=plaintext, label=<
+      <TABLE BORDER="2" STYLE="dashed" COLOR="#2E7D32" CELLBORDER="0" CELLSPACING="3" CELLPADDING="2" BGCOLOR="white">
+        <TR><TD COLSPAN="2"><B>Render Web Service</B> (environment) <FONT POINT-SIZE="9" COLOR="#607D8B">render.yaml, free plan</FONT></TD></TR>
+        <TR>
+          <TD PORT="asleep"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>asleep (cold start ~50 s)</TD></TR></TABLE></TD>
+          <TD PORT="awake"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>awake</TD></TR></TABLE></TD>
+        </TR>
+      </TABLE>>];
+    sd4_presenter [shape=box, color="#2E7D32", peripheries=2, label=<Presenter>];
+    sd4_jury   [shape=box, color="#2E7D32", peripheries=2, style=dashed, label=<Jury>];
+
+    d1 [shape=ellipse, color="#1565C0", label=<Freezing Contract (t=0:30)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">both devs together</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R15]</FONT>>];
+    d2 [shape=ellipse, color="#1565C0", label=<Implementing A>];
+    d3 [shape=ellipse, color="#1565C0", label=<Implementing B>];
+    d4 [shape=ellipse, color="#1565C0", label=<Checking Compatibility<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">compileall + pytest x2 + ruff py311</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R13]</FONT>>];
+    d5 [shape=ellipse, color="#1565C0", label=<Merging (hourly)<BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R16]</FONT>>];
+    d6 [shape=ellipse, color="#1565C0", label=<Building Image>];
+    d7 [shape=ellipse, color="#1565C0", label=<Deploying>];
+    d8 [shape=ellipse, color="#1565C0", label=<Warming Up<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">open /api/health 5 min before pitch</FONT>>];
+    d9 [shape=ellipse, color="#1565C0", label=<Presenting Demo<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">docs/TEAM_PLAN.md demo script</FONT>>];
+
+    d1 -> d2 [style=invis, weight=10]; d1 -> d3 [style=invis, weight=10];
+    {rank=same; d2; d3;}
+    d2 -> d4 [style=invis]; d3 -> d4 [style=invis]; d4 -> d5 -> d6 -> d7 -> d8 -> d9 [style=invis, weight=10];
+
+    sd4_code -> sd4_agg [arrowhead=none];
+    sd4_agg -> sd4_contract [arrowhead=none];
+    sd4_agg -> sd4_partA [arrowhead=none];
+    sd4_agg -> sd4_partB [arrowhead=none];
+
+    sd4_devA -> d1 [arrowhead=dot];
+    sd4_devB -> d1 [arrowhead=dot];
+    d1 -> sd4_contract;
+    sd4_devA -> d2 [arrowhead=dot];
+    sd4_devB -> d3 [arrowhead=dot];
+    sd4_contract -> d2 [arrowhead=odot];
+    sd4_contract -> d3 [arrowhead=odot];
+    d2 -> sd4_partA;
+    d3 -> sd4_partB;
+    sd4_partA -> d4 [arrowhead=odot];
+    sd4_partB -> d4 [arrowhead=odot];
+    d4 -> sd4_gate:green;
+    d4 -> sd4_gate:red;
+    sd4_gate:red -> d2 [style=dashed, label="fix"];
+    sd4_gate:green -> d5 [arrowhead=odot, label="c: only if green"];
+    d5 -> sd4_repo;
+    sd4_repo -> d6 [arrowhead=odot];
+    d6 -> sd4_image;
+    sd4_image -> d7 [arrowhead=odot];
+    d7 -> sd4_render:asleep;
+    sd4_render:asleep -> d8;
+    d8 -> sd4_render:awake;
+    sd4_render:awake -> d9 [arrowhead=odot, label="c"];
+    sd4_presenter -> d9 [arrowhead=dot];
+    d9 -> sd4_jury [dir=both, style=dashed, label="persuades"];
+  }
+
+  // =================================================================================================
+  // RULES - invariants an implementing agent must never break (OPL + enforcing code in OPM_GUIDE.md)
+  // =================================================================================================
+  subgraph cluster_rules {
+    label=<<B>R - Rules (invariants)</B>  <FONT POINT-SIZE="10">tags like [R2 R5] on a process = rules it must obey; OPL + tests in OPM_GUIDE.md</FONT>>;
+    style="rounded,filled"; fillcolor="#FFFDF5"; color="#B26B00";
+    rules_table [shape=plaintext, fontsize=10, label=<
+      <TABLE BORDER="1" COLOR="#B26B00" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#FFF8E1">
+        <TR><TD ALIGN="LEFT"><B>ID</B></TD><TD ALIGN="LEFT"><B>Invariant</B></TD><TD ALIGN="LEFT"><B>Enforced in</B></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R1</B></TD><TD ALIGN="LEFT">LLM agents choose actions and propose rulings; deterministic tools/policy authorize every money move; a ruling counts only inside the policy band</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">agents/buyer_agent.py tools, disputes.validate</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R2</B></TD><TD ALIGN="LEFT">Money = integer minor units; every ledger txn sums to 0; only treasury may go negative</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">economy/ledger.py::post</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R3</B></TD><TD ALIGN="LEFT">State change + outbox event in ONE transaction (BEGIN IMMEDIATE)</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">db.py::transaction, emit_event</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R4</B></TD><TD ALIGN="LEFT">Order status changes only via compare-and-set along the SD1/SD2 state graph</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">economy/escrow.py::_transition</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R5</B></TD><TD ALIGN="LEFT">Idempotency: hold by idempotency_key; buyer funded once; receipt redeemed once</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">escrow.hold, platform_api register_buyer, sellers/app.py</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R6</B></TD><TD ALIGN="LEFT">Spend mandate (max/order, daily) checked before debit; survival tier caps price</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">escrow.hold, agents/buyer.py::TIERS</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R7</B></TD><TD ALIGN="LEFT">Seller executes the QUOTED task; verifies HMAC receipt, amount, quote ownership; HMAC-signs content_hash (platform verifies before the delivery transition)</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">sellers/app.py::task, receipts.sign_content, escrow.mark_delivered</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R8</B></TD><TD ALIGN="LEFT">Adjudicator trusts nobody: re-hash evidence, re-run acceptance checks</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">economy/disputes.py::open_and_resolve</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R9</B></TD><TD ALIGN="LEFT">all pass -&gt; RELEASE; critical fail -&gt; REFUND_FULL; only performance fail -&gt; REFUND_PARTIAL 50%</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">economy/disputes.py::decide</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R10</B></TD><TD ALIGN="LEFT">Point-in-time: rows &lt;= as_of; synthetic path fixed-length; seeds via zlib.crc32, never hash()</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">market/data.py, market/quality.py</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R11</B></TD><TD ALIGN="LEFT">Warehouse built only from events; dedupe by event_id; marts rebuilt idempotently</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">analytics/ingest.py, sql/marts/*</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R12</B></TD><TD ALIGN="LEFT">11 DQ checks = 0 violations (incl. AI cost calls vs runs); escrow == open orders; OLTP orders == fact_orders</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">sql/quality_checks.sql</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R13</B></TD><TD ALIGN="LEFT">Python 3.11 AND 3.13: no PEP 695, no sqlite autocommit=, ISO timestamps; gate green before merge</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">scripts/check_compat.*, ci.yml</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R14</B></TD><TD ALIGN="LEFT">Frontend calls backend only via api.js; money via fmt.usd; status = colour + icon + label</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">docs/FRONTEND_RULES.md</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R15</B></TD><TD ALIGN="LEFT">contracts.py + sql/001_core.sql are frozen: change only with both devs, then update OPM + guide</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">contracts.py, sql/001_core.sql</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R17</B></TD><TD ALIGN="LEFT">Every LLM call is metered (tokens, integer micro-USD, price source); runs stop at the tool-call or cost budget; trace + events persist in one txn</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">agents/accounting.py, agents/telemetry.py</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R18</B></TD><TD ALIGN="LEFT">Grounding: agent reports may only cite tool results; guardian must cite checks that failed; undecided deliveries are closed by policy</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">buyer_agent.run_llm_buyer, disputes.validate</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>R16</B></TD><TD ALIGN="LEFT">Private outline doc never leaves the laptop; no SAP product integration claimed</TD><TD ALIGN="LEFT"><FONT COLOR="#607D8B">.gitignore, .dockerignore</FONT></TD></TR>
+      </TABLE>>];
+  }
+
+  // ---------------- refinement (in-zoom) links between OPDs ----------------
+  edge [style=dashed, color="#90A4AE", arrowhead=vee, constraint=true, fontcolor="#607D8B"];
+  sd_trade  -> p1 [lhead=cluster_SD1, label="in-zoomed in SD1"];
+  p12       -> q1 [lhead=cluster_SD2, label="in-zoomed in SD2"];
+  sd_analyt -> a1 [lhead=cluster_SD3, label="in-zoomed in SD3"];
+  sd_devops -> d1 [lhead=cluster_SD4, label="in-zoomed in SD4"];
+  sd1_buyer -> g1 [lhead=cluster_SD5, label="reasoning unfolded in SD5"];
+}

@@ -1,0 +1,59 @@
+# Render Blueprint - https://render.com/docs/blueprint-spec
+# Deploy: Render dashboard -> New -> Blueprint -> pick this repo.
+#
+# Service 1 (agentledger) works on its own: dashboard + API + clearing house + in-process sellers.
+# Service 2 (agentledger-sellers) is optional: the same image with AL_ROLE=sellers, so the buyer pays
+# sellers over the public internet. To switch it on, set AL_SELLER_URL on service 1 to service 2's URL
+# and AL_SELLER_PUBLIC_URL on service 2 to its own URL (free instances cannot use the private network).
+# Free plan notes: services sleep after ~15 min idle (open both URLs before the pitch); disk is ephemeral,
+# so the SQLite ledger resets on every deploy/restart - fine for a demo.
+
+envVarGroups:
+  - name: agentledger-shared
+    envVars:
+      - key: AL_PAYMENT_SECRET      # sellers verify receipts signed by the clearing house
+        generateValue: true
+      - key: AL_DATA_SOURCE
+        value: synthetic
+
+services:
+  - type: web
+    name: agentledger
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - fromGroup: agentledger-shared
+      - key: AL_ROLE
+        value: all
+      - key: AL_SELLER_URL          # leave empty = in-process sellers; else https://agentledger-sellers.onrender.com/
+        sync: false
+      # AI agents (buyer + guardian). Without a key the service falls back to the rule-based agents.
+      - key: AL_AGENT_MODE
+        value: auto
+      - key: AL_LLM_PROVIDER        # mistral | anthropic | openai_compat
+        value: mistral
+      - key: MISTRAL_API_KEY        # secret: Render prompts for it, never committed
+        sync: false
+      - key: AL_AGENT_MAX_COST_USD  # hard cost cap per agent run
+        value: "0.50"
+      - key: AL_ADMIN_TOKEN         # required by the "Reset demo" button on the public URL (see it in the dashboard)
+        generateValue: true
+
+  - type: web
+    name: agentledger-sellers
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - fromGroup: agentledger-shared
+      - key: AL_ROLE
+        value: sellers
+      - key: AL_SELLER_PUBLIC_URL   # this service's own URL, e.g. https://agentledger-sellers.onrender.com
+        sync: false
