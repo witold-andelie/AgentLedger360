@@ -71,7 +71,10 @@ TASKS = [
     Task("build_dim_agents", sql_task("marts/dim_agents.sql", "analytics.dim_agents"), ("ingest_events",)),
     Task("build_fact_orders", sql_task("marts/fact_orders.sql", "analytics.fact_orders"), ("ingest_events",)),
     Task("build_ai_costs", sql_task("marts/fact_llm_calls.sql", "analytics.fact_llm_calls"), ("ingest_events",)),
-    Task("data_quality_checks", quality_checks, ("build_dim_agents", "build_fact_orders", "build_ai_costs")),
+    Task("build_signal_outcomes", sql_task("marts/fact_signal_outcomes.sql", "analytics.fact_signal_outcomes"),
+         ("ingest_events",)),
+    Task("data_quality_checks", quality_checks,
+         ("build_dim_agents", "build_fact_orders", "build_ai_costs", "build_signal_outcomes")),
 ]
 
 

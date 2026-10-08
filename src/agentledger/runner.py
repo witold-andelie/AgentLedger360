@@ -98,6 +98,7 @@ class Market:
             expired = self.router.post(f"{self.platform_url}/orders/expire")
             if expired.status_code != 200:
                 expired.raise_for_status()
+            self._verify_matured()
             self._load_policy()
             if self.mode == "llm" and not force_rule:
                 purchases = self._llm_round(symbols, as_of, on_start)
@@ -107,6 +108,19 @@ class Market:
                              for s in symbols if s.strip()]
             self._learn()
             return purchases
+
+    def _verify_matured(self) -> None:
+        from datetime import date
+
+        from agentledger.db import connect, transaction
+        from agentledger.economy.outcomes import verify_matured
+
+        conn = connect(self.settings)
+        try:
+            with transaction(conn):
+                verify_matured(conn, date.today())
+        finally:
+            conn.close()
 
     def _load_policy(self) -> None:
         from agentledger.agents.learning import load_buyer_policy

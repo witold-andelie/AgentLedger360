@@ -34,6 +34,23 @@ CREATE TABLE IF NOT EXISTS buyer_policy (
     updated_at    TEXT NOT NULL
 );
 
+-- Realized 5-day direction, checked only after the horizon has passed. Separate from purchase reputation.
+CREATE TABLE IF NOT EXISTS signal_outcomes (
+    order_id         TEXT PRIMARY KEY REFERENCES orders(order_id),
+    seller_agent_id  TEXT NOT NULL,
+    predicted        INTEGER NOT NULL,
+    realized_up      INTEGER NOT NULL,
+    correct          INTEGER NOT NULL,
+    verified_on      TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS seller_verified (
+    agent_id    TEXT PRIMARY KEY,
+    checked     INTEGER NOT NULL DEFAULT 0,
+    correct     INTEGER NOT NULL DEFAULT 0,
+    reputation  REAL NOT NULL DEFAULT 0.5
+);
+
 CREATE TABLE IF NOT EXISTS audit_chain (
     seq        INTEGER PRIMARY KEY REFERENCES outbox(seq),
     prev_hash  TEXT NOT NULL,

@@ -425,11 +425,12 @@ digraph AgentLedger360_OPM {
     a7 [shape=ellipse, color="#1565C0", label=<Rendering Dashboard<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">frontend (rules: docs/FRONTEND_RULES.md)</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R14]</FONT>>];
     a9 [shape=ellipse, color="#1565C0", label=<Running Round in Background<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">server thread -&gt; runner.Market.run_round (SD1); c: under daily AI budget or degrade to rules</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R17 R21]</FONT>>];
     a10 [shape=ellipse, color="#1565C0", label=<Polling Round<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">agentRound.jsx, every 1.5 s</FONT>>];
+    a11 [shape=ellipse, color="#1565C0", label=<Verifying Matured Signals<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">outcomes.verify_matured, event signal.verified</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R11]</FONT>>];
 
     a1 -> a2 [style=invis, weight=10]; a1 -> a3 [style=invis, weight=10];
     a1 -> a8 [style=invis, weight=10];
     {rank=same; a2; a3; a8;}
-    a8 -> a4 [style=invis]; a2 -> a4 [style=invis]; a3 -> a4 [style=invis]; a4 -> a5 [style=invis]; a5 -> a6 [style=invis]; a6 -> a7 [style=invis]; a7 -> a9 [style=invis]; a9 -> a10 [style=invis];
+    a8 -> a4 [style=invis]; a2 -> a4 [style=invis]; a3 -> a4 [style=invis]; a4 -> a5 [style=invis]; a5 -> a6 [style=invis]; a6 -> a7 [style=invis]; a7 -> a9 [style=invis]; a9 -> a10 [style=invis]; a10 -> a11 [style=invis];
 
     sd3_outbox -> a1 [arrowhead=odot, label="seq > cursor"];
     a1 -> sd3_cursor [dir=both];

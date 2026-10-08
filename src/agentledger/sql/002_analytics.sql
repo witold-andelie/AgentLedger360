@@ -87,7 +87,18 @@ SELECT
 FROM fact_orders f
 GROUP BY f.buyer_agent_id;
 
-CREATE VIEW IF NOT EXISTS analytics.v_agent_performance AS
+CREATE TABLE IF NOT EXISTS analytics.fact_signal_outcomes (
+    order_id         TEXT PRIMARY KEY,
+    seller_agent_id  TEXT NOT NULL,
+    symbol           TEXT,
+    predicted        INTEGER NOT NULL,
+    realized_up      INTEGER NOT NULL,
+    correct          INTEGER NOT NULL,
+    verified_at      TEXT
+);
+
+DROP VIEW IF EXISTS analytics.v_agent_performance;
+CREATE VIEW analytics.v_agent_performance AS
 SELECT
     f.seller_agent_id,
     d.name,
@@ -100,9 +111,18 @@ SELECT
     MAX(f.latency_ms)                                            AS max_latency_ms,
     ROUND(AVG(f.hit_rate), 3)                                    AS avg_hit_rate,
     ROUND(AVG(f.rank_ic), 3)                                     AS avg_rank_ic,
-    ROUND(d.reputation, 3)                                       AS reputation
+    ROUND(d.reputation, 3)                                       AS reputation,
+    v.realized_hit_rate                                          AS realized_hit_rate,
+    COALESCE(v.verified_orders, 0)                               AS verified_orders
 FROM fact_orders f
 LEFT JOIN dim_agents d ON d.agent_id = f.seller_agent_id
+LEFT JOIN (
+    SELECT seller_agent_id,
+           ROUND(AVG(correct), 3) AS realized_hit_rate,
+           COUNT(*)               AS verified_orders
+    FROM fact_signal_outcomes
+    GROUP BY seller_agent_id
+) v ON v.seller_agent_id = f.seller_agent_id
 GROUP BY f.seller_agent_id;
 
 CREATE VIEW IF NOT EXISTS analytics.v_daily_kpis AS

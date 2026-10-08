@@ -42,6 +42,7 @@ class EventType(StrEnum):
     PAYMENT_REFUNDED = "payment.refunded"
     REPUTATION_UPDATED = "reputation.updated"
     POLICY_LEARNED = "policy.learned"          # buyer price-vs-reputation weight moved
+    SIGNAL_VERIFIED = "signal.verified"        # realized 5-day direction, after the horizon
     LLM_USAGE = "llm.usage"                    # one per LLM call: tokens + cost (agents/accounting.py)
     AGENT_RUN_FINISHED = "agent.run.finished"  # one per agent run: totals + outcome
 

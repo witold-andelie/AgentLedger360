@@ -164,6 +164,7 @@ In an in-zoomed diagram, processes **from top to bottom = time order** (the orde
 | Token Meter / Budget / Agent Run Report (SD5) | object | `agents/accounting.py`, `agents/telemetry.py`, `sql/003_agents.sql` | A |
 | Building AI cost facts (SD3) | process | `sql/marts/fact_llm_calls.sql`, views `v_ai_cost_by_agent/model` | B |
 | Agent Console page | — | `frontend/src/pages/AgentConsole.jsx` (rules §11) | frontend owner |
+| Verifying matured signals | process | `economy/outcomes.py` `verify_matured`, event `signal.verified` | A |
 | Running Round in Background / Background Round Job (SD3) | process / object | `server.py` `/api/agent/rounds` | A |
 | Polling Round / Shared Round State (SD3) | process / object | `frontend/src/agentRound.jsx` | frontend owner |
 | AI cost page elements | — | `components/KpiRow.jsx`, `components/AiCostTables.jsx` | frontend owner |

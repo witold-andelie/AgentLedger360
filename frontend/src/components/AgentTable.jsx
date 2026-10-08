@@ -19,6 +19,7 @@ export default function AgentTable({ agents }) {
               <th className="num">{t('Avg latency')}</th>
               <th className="num">{t('Hit rate')}</th>
               <th className="num">{t('Rank IC')}</th>
+              <th className="num">{t('Realized hit rate')}</th>
             </tr>
           </thead>
           <tbody>
@@ -33,6 +34,7 @@ export default function AgentTable({ agents }) {
                 <td className="num">{agent.avg_latency_ms == null ? '-' : `${fmt.num(agent.avg_latency_ms, 0)} ${t('ms')}`}</td>
                 <td className="num">{fmt.pct(agent.avg_hit_rate)}</td>
                 <td className="num">{fmt.num(agent.avg_rank_ic, 3)}</td>
+                <td className="num">{fmt.pct(agent.realized_hit_rate)}</td>
               </tr>
             ))}
           </tbody>
