@@ -38,7 +38,7 @@ AI 智能体在市场里互相买卖「市场情报」（5 日涨跌信号）：
 - 前端：ESLint 无问题，`npm run build` 成功；用 Playwright + 本机 Edge 截图检查过桌面和 390px 手机宽度，无溢出、无报错。
 - 真实 LLM：用 Mistral 跑过 2 轮完整回合（约 $0.077–0.089/轮，约 23 秒），仲裁提议都通过策略校验。
 - **Docker**：2026-10-08 本机构建成功（约 1 分钟，镜像 851 MB，Python 3.13.16）；按 Render 方式运行（`PORT=10000`、规则模式）检查通过：健康检查、页面、交易回合、重置演示（无令牌 403、有令牌 200）；空闲内存 77 MB，加载 LLM 相关库后峰值约 238 MB（免费版上限 512 MB）。
-- **Render**：2026-10-08 已用 Blueprint 部署主服务 `agentledger`（法兰克福，免费版）。可选的卖方服务 `agentledger-sellers` 已删除，并已从 `render.yaml` 移除。**主服务网址带随机后缀，待记录**；注意 `agentledger.onrender.com` 是别人的项目。
+- **Render**：2026-10-08 已用 Blueprint 部署主服务 `agentledger`（法兰克福，免费版）。可选的卖方服务 `agentledger-sellers` 已删除，并已从 `render.yaml` 移除。网址：**https://agentledger-k4no.onrender.com**（注意 `agentledger.onrender.com` 是别人的项目，不要给错）。2026-10-08 远程检查通过：健康检查（LLM 模式，`mistral-medium-latest`）、最新前端、6 个卖方、对账、无令牌重置被拒（403）。
 - **未验证**：线上 LLM 回合；Claude / DeepSeek 路径（无 key）；双机真实网络；交易大厅页在 LLM 模式下的进度条与「到控制台实时观看」按钮（代码与已验证的控制台共用）。
 
 ### 2.3 现存的信任漏洞（2026-10-08 用 `probe_attacks` 复测，**全部仍可攻破**）
@@ -149,7 +149,7 @@ sh scripts/check_compat.sh                                            # macOS/Li
 ### P0 — 演示与部署
 
 #### T5 Docker 构建 + Render 部署 · M（步骤 1–2 已完成，见 2.2 节）
-- **剩余**：记录主服务网址（写进 README 和本文件）；完成第 3、4 步；在 Mistral 控制台给 key 设消费上限，或者平时把 `AL_AGENT_MODE` 设成 `rule`、演示前再改回 `auto`（公网访客也能点「运行」花你的额度）。
+- **剩余**：完成第 3、4 步；在 Mistral 控制台给 key 设消费上限，或者平时把 `AL_AGENT_MODE` 设成 `rule`、演示前再改回 `auto`（公网访客也能点「运行」花你的额度）。
 - **步骤**：
   1. 本机 `docker build -t agentledger .`，再 `docker run -p 8000:8000 -e AL_AGENT_MODE=rule agentledger`，检查 `/api/health` 和页面（Dockerfile 用 `npm ci`，依赖已提交的 `frontend/package-lock.json`）。
   2. Render → New → Blueprint → 选这个仓库；输入 `MISTRAL_API_KEY`；`AL_SELLER_URL` 留空。
@@ -160,6 +160,12 @@ sh scripts/check_compat.sh                                            # macOS/Li
 
 #### T6 交易大厅 LLM 模式实测 · S（约 $0.08）
 - 在 LLM 模式下从「交易大厅」点「跑一轮交易」：进度条显示秒数、步数和累计费用；点「到智能体控制台实时观看」能看到同一回合；结束后交易大厅出现结果和对账。记录费用。
+
+#### T21 启动时自动注册并充值买方 · S
+- **现象**：新部署或重启后，第一轮之前「买方钱包」显示 $0.00（买方在第一轮时才注册并充值 $30）。评委若先打开页面会看到 $0。
+- **改法**：`server.create_app` 在创建 `Market` 后尝试调用一次 `market.bootstrap()`；进程内卖方一定成功；如果配置了远程卖方（`AL_SELLER_URL`），失败就记日志并跳过，第一轮时再注册。
+- **验收**：新测试——`create_app()` 之后 `/api/summary` 的 `buyer_balance_minor == 3000`，重复创建应用不会重复充值。
+- **临时办法**：演示前点一次「重置演示」。
 
 ### P1 — 让智能体更像「真智能体」（借鉴 revenue_agent）
 
@@ -254,3 +260,4 @@ sh scripts/check_compat.sh                                            # macOS/Li
 | 2026-10-08 | `94c9668` `9af9756` | 停止跟踪 `CLAUDE.md`，加入 `.gitignore` |
 | 2026-10-08 | 本次提交 | 前端补齐：交易大厅 AI 费用/LLM 调用 KPI、智能体信誉页 AI 成本表、共享后台回合（交易大厅不再阻塞，可跳转控制台实时观看）；新增 `progress.md`（借鉴 revenue_agent 的待办 T1–T10）；更新框架：OPM SD3 加后台回合/轮询/共享状态，SD4 加重置演示，OPM 指南缺口改指向 `progress.md`，README 架构图加入仲裁智能体、LLM 供应商和 token 计量 |
 | 2026-10-08 | 本次提交 | 部署：本机验证 Docker 镜像；Render Blueprint 部署主服务；删除可选卖方服务并从 `render.yaml` 移除（单服务）；README、团队计划、本文件同步 |
+| 2026-10-08 | 本次提交 | 记录线上网址 https://agentledger-k4no.onrender.com，远程检查通过；新增待办 T21（启动时自动注册并充值买方） |

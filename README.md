@@ -16,6 +16,7 @@ Every state change goes through a transactional **outbox** into an event-sourced
 
 **System model:** `docs/opm/` (OPM diagram in DOT, rendered SVGs, OPL guide). Agents start at `AGENTS.md`.
 **Status and backlog:** `progress.md`.
+**Live demo:** https://agentledger-k4no.onrender.com (free Render instance: the first visit after ~15 min idle takes ~50 s).
 
 ## Real AI agents (and what they cost)
 
@@ -100,7 +101,7 @@ Allow the port through Windows Firewall on laptop B.
 ## Deploy on Render
 
 `render.yaml` is a Blueprint (Docker runtime, free plan, Frankfurt): Render dashboard -> New -> Blueprint.
-It creates one service, `agentledger`, that runs everything (dashboard, API, clearing house, AI agents, in-process
+Live: https://agentledger-k4no.onrender.com. It creates one service, `agentledger`, that runs everything (dashboard, API, clearing house, AI agents, in-process
 sellers). Its URL may carry a random suffix (`agentledger.onrender.com` belongs to an unrelated project), so copy
 the real one from the service page. Free instances sleep after ~15 min: open `/api/health` before presenting.
 SQLite resets on every deploy, and every push to `main` redeploys. Two-host mode (sellers on a second service with
