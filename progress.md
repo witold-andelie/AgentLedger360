@@ -3,7 +3,7 @@
 > **给接手的 agent / 开发者：先读这份文件，再读 `AGENTS.md` 和 `docs/opm/OPM_GUIDE.md`。**
 > 本文件是项目的「当前状态 + 剩余工作」单一来源。每完成一项工作，按第 7 节的规则更新本文件，并和代码在**同一个提交**里推送。
 
-最后更新：2026-10-08（基于提交 `9af9756` 之后的工作区；本次与本文件同一提交推送）
+最后更新：2026-10-08（基于提交 `433c96e`；本次待办整理与本文件同一提交推送）
 
 ---
 
@@ -31,7 +31,7 @@ AI 智能体在市场里互相买卖「市场情报」（5 日涨跌信号）：
 | Web | FastAPI：`/api/*`、`/platform/*`、`/sellers/*` + 前端静态文件；后台交易回合 + 轮询；重置演示 | `server.py`, `runner.py` |
 | 前端 | React + Vite：交易大厅、智能体控制台（实时轨迹 + 费用）、智能体信誉（含 AI 成本表）、Customer 360、数据质量；中英切换；手机端适配；共享后台回合 | `frontend/src/*` |
 | 文档 | OPM 模型 SD–SD5 + 规则 R1–R18、OPM 指南、前端规则、团队计划 | `docs/*` |
-| 部署 | Dockerfile（两阶段）+ Render Blueprint（含 `MISTRAL_API_KEY`、自动生成的 `AL_ADMIN_TOKEN`） | `Dockerfile`, `render.yaml` |
+| 部署 | Dockerfile（两阶段，本机已验证）+ Render Blueprint 单服务（含 `MISTRAL_API_KEY`、自动生成的 `AL_ADMIN_TOKEN`）；**线上：https://agentledger-k4no.onrender.com** | `Dockerfile`, `render.yaml` |
 
 ### 2.2 验证状态（2026-10-08）
 - `scripts/check_compat.ps1`：Python **3.11 和 3.13 各 21 项测试全部通过**，ruff 无问题；GitHub Actions CI（3.11 + 3.13）通过。
@@ -106,6 +106,35 @@ sh scripts/check_compat.sh                                            # macOS/Li
 
 工作量：S ≈ 0.5–1 小时，M ≈ 1–3 小时，L ≈ 半天以上。
 
+### 待办总览（状态：⬜ 未开始 · 🟡 进行中 · ✅ 完成 · ⏸ 等用户决定）
+| ID | 事项 | 优先级 | 工作量 | 状态 | 依赖 / 备注 |
+|---|---|---|---|---|---|
+| T1 | 能力开关（顺带修 A4） | P0 | S | ⬜ | — |
+| T2 | 买方鉴权 + 清算所转交交付（修 A1/A2/A3） | P0 | M–L | ⬜ | 涉及契约变更，需双方同意（R15） |
+| T3 | 攻防演示页 Attack Lab | P0 | M | ⬜ | 依赖 T1、T2（T8 完成后加注入场景） |
+| T4 | 哈希链审计日志 | P0 | S | ⬜ | — |
+| T5 | Docker 构建 + Render 部署 | P0 | M | ✅ | 2026-10-08，线上网址见 2.2 节 |
+| T21 | 启动时自动注册并充值买方 | P0 | S | ⬜ | 完成前演示前必须先点「重置演示」 |
+| T22 | 线上演示前检查清单 | P0 | S | ⬜ | 每次正式演示前都做；约 $0.09 |
+| T23 | 公网费用保护（每日预算 / 运行令牌 / 限流） | P0 | S–M | ⬜ | 完成前先在 Mistral 控制台设消费上限 |
+| T6 | 交易大厅 LLM 模式实测 | P0 | S | ⬜ | 可在 T22 第 4 步顺带完成 |
+| T7 | 有界学习器 | P1 | S–M | ⬜ | 新增事件类型（契约变更） |
+| T8 | 提示词注入防护 + 恶意卖家 | P1 | S–M | ⬜ | — |
+| T9 | 事后结果核验 | P1 | M | ⬜ | 演示时用过去的 `as_of` |
+| T10 | 人工复核关卡 | P1 | M | ⬜ | 运营令牌复用 T1 / 重置演示的令牌 |
+| T11 | 支付通道接口（场景二） | P2 | M–L | ⬜ | Stripe 测试 key 或 x402 测试网 |
+| T12 | 价格协商 | P2 | M | ⬜ | — |
+| T13 | LLM 卖方 | P2 | M | ⬜ | 可选 |
+| T14 | Claude / DeepSeek 实测 | P2 | S | ⬜ | 需要对应 key |
+| T15 | 双机模式真实网络测试 | P2 | S | ⬜ | 两台机器 `AL_PAYMENT_SECRET` 一致 |
+| T16 | 公私钥签名（Ed25519） | P2 | M | ⬜ | — |
+| T24 | 真 Kafka（Redpanda） | P2 | M | ⬜ | 可选；只在本地演示 |
+| T25 | 持久化存储 | P2 | M | ⬜ | 可选；黑客松用不到 |
+| T17 | OPM 补齐 | P3 | S | 🟡 | 重置演示、后台回合已画；其余随 T1–T10 补 |
+| T18 | 演示材料（幻灯片、讲稿、备用录屏） | P3 | M | ⬜ | — |
+| T19 | Git 历史里的 `CLAUDE.md` | P3 | S | ⏸ | 改写历史需要用户明确同意 |
+| T20 | Mistral 价格核实 | P3 | S | ⬜ | 需要访问 Mistral 账单 |
+
 ### P0 — 信任与安全（组织方场景一的核心，评委一问就会被问到）
 
 #### T1 能力开关（借鉴 revenue_agent `governance.py`）· S
@@ -148,18 +177,32 @@ sh scripts/check_compat.sh                                            # macOS/Li
 
 ### P0 — 演示与部署
 
-#### T5 Docker 构建 + Render 部署 · M（步骤 1–2 已完成，见 2.2 节）
-- **剩余**：完成第 3、4 步；在 Mistral 控制台给 key 设消费上限，或者平时把 `AL_AGENT_MODE` 设成 `rule`、演示前再改回 `auto`（公网访客也能点「运行」花你的额度）。
-- **步骤**：
-  1. 本机 `docker build -t agentledger .`，再 `docker run -p 8000:8000 -e AL_AGENT_MODE=rule agentledger`，检查 `/api/health` 和页面（Dockerfile 用 `npm ci`，依赖已提交的 `frontend/package-lock.json`）。
-  2. Render → New → Blueprint → 选这个仓库；输入 `MISTRAL_API_KEY`；`AL_SELLER_URL` 留空。
-  3. 在 Render 面板查看自动生成的 `AL_ADMIN_TOKEN`（重置按钮要用）。
-  4. 线上跑一轮（约 $0.09），确认智能体控制台和费用正常。
-- **注意**：免费实例约 15 分钟无访问会休眠，冷启动约 50 秒，演示前 5 分钟先打开 `/api/health`；SQLite 在每次部署或重启后清空。
-- **验收**：公网地址可用；把地址写进 README 和本文件。
+#### ✅ T5 Docker 构建 + Render 部署（2026-10-08 完成，提交 `ea7936b` `433c96e`）
+- 本机构建并按 Render 方式运行通过；Render Blueprint 部署单服务 `agentledger`；网址 https://agentledger-k4no.onrender.com；远程检查通过（见 2.2 节）。
+- 剩下的演示前准备移到 **T22**，公网费用保护移到 **T23**。
 
-#### T6 交易大厅 LLM 模式实测 · S（约 $0.08）
+#### T22 线上演示前检查清单 · S（每次正式演示前都要做，约 $0.09）
+1. 在 Render → 服务 `agentledger` → Environment 找到 `AL_ADMIN_TOKEN`，保存好（「重置演示」会弹框要它）。
+2. 演示前 5 分钟打开 `https://agentledger-k4no.onrender.com/api/health` 唤醒实例（冷启动约 50 秒），确认 `"agent_mode":"llm"`。
+3. 点「重置演示」（输入令牌）→ 买方钱包应显示 $30.00（T21 完成前这一步必做）。
+4. 在「智能体控制台」跑一轮（约 $0.09）：轨迹、费用、仲裁子运行、最终报告、对账都正常；再到「交易大厅」确认 KPI 里的 AI 费用已更新（顺带完成 T6）。
+5. 再点一次「重置演示」，让评委看到的是干净的数据。
+6. 只给评委带 `-k4no` 的网址（`agentledger.onrender.com` 是别人的项目）。
+7. 演示当天**不要往 `main` 推送**（`autoDeploy` 会重新部署并清空数据）。
+8. 做完把日期、花费写进进度日志。
+
+#### T6 交易大厅 LLM 模式实测 · S（约 $0.08，可在 T22 第 4 步里线上顺带完成）
 - 在 LLM 模式下从「交易大厅」点「跑一轮交易」：进度条显示秒数、步数和累计费用；点「到智能体控制台实时观看」能看到同一回合；结束后交易大厅出现结果和对账。记录费用。
+
+#### T23 公网费用保护 · S–M（公网上任何人都能点「运行」，每轮都花你的 Mistral 额度）
+- **现状**：每次运行有 $0.50 上限（`AL_AGENT_MAX_COST_USD`），但**运行次数不受限制**。
+- **设计**（`server.py`，新环境变量写进 `.env.example` 和 `render.yaml`）：
+  1. `AL_DAILY_AI_BUDGET_USD`（建议 2.00）：开始一轮前，汇总 `agent_runs` 里当天（UTC）的 `cost_micro_usd`；超过预算时这一轮**自动降级为规则智能体**（不调用 LLM），并在响应里返回 `degraded: "daily AI budget reached"`；前端在控制台和交易大厅显示提示（warn 图标 + 文字）。
+  2. `AL_RUN_TOKEN`（可选）：设置后，`POST /api/round` 和 `POST /api/agent/rounds` 需要 `X-Run-Token`；前端像重置按钮一样在 403 后弹框要一次，并只在本次页面会话内记住（不写 `localStorage`）。
+  3. 同一 IP 每 60 秒最多开始 1 轮（内存计数即可），超出返回 429。
+  4. `/api/health` 返回 `daily_ai_budget_usd`、`ai_spent_today_usd`、`run_requires_token`。
+- **验收**：新测试——预算用完后回合降级为规则模式且费用不再增加；设置令牌后无令牌返回 403、有令牌返回 200；60 秒内第二轮返回 429。OPM：SD3 的「Running Round in Background」加条件链接；新增规则 R21（公网费用上限）。
+- **在此之前的临时办法**：在 Mistral 控制台给 key 设消费上限；不演示时把 Render 上的 `AL_AGENT_MODE` 设为 `rule`，演示前再改回 `auto`。
 
 #### T21 启动时自动注册并充值买方 · S
 - **现象**：新部署或重启后，第一轮之前「买方钱包」显示 $0.00（买方在第一轮时才注册并充值 $30）。评委若先打开页面会看到 $0。
@@ -217,8 +260,15 @@ sh scripts/check_compat.sh                                            # macOS/Li
 - **T12 价格协商 · M**：在报价和托管之间加一个协商过程：买方 LLM 可以还价（最多 3 轮），卖方按底价规则回应，最终价格必须 ≤ 钱包授权上限。
 - **T13 LLM 卖方 · M（可选）**：一个用 LLM 写研究短评的卖家，同样走 402 和验收（验收规则需要新设计）。
 - **T14 Claude / DeepSeek 实测 · S**：有 key 时各跑一轮，记录费用；Claude 默认模型是 `claude-opus-5-5`，带服务端拒答回退参数（尚未实测）。
-- **T15 双机模式真实网络测试 · S**：笔记本 B 用 `AL_ROLE=sellers`，A 用 `AL_SELLER_URL` 指过去；两台机器的 `AL_PAYMENT_SECRET` 必须一致；记得在 Windows 防火墙放行端口。
+- **T15 双机模式真实网络测试 · S**：笔记本 B 用 `AL_ROLE=sellers` 和 `AL_SELLER_PUBLIC_URL=http://<B 的地址>:8002`，A 用 `AL_SELLER_URL` 指过去；两台机器的 `AL_PAYMENT_SECRET` 必须一致；记得在 Windows 防火墙放行端口。Render 上的第二个卖方服务已于 2026-10-08 删除；如需线上双服务演示，按 `render.yaml` 末尾注释重新加一个服务（会多一个需要唤醒的免费实例）。
 - **T16 公私钥签名 · M**：把支付凭证和交付签名从共享 HMAC 换成 Ed25519（`cryptography` 包，需确认 3.11/3.13 都有 wheel）。
+- **T24 真 Kafka（可选）· M**：目前**没有用 Kafka**，用的是「事务性发件箱 + 游标轮询」，约定与 Kafka 消费者相同（见 `analytics/ingest.py`）。如需展示真 Kafka：
+  1. 在 `deploy/compose.kafka.yml` 里用 Redpanda（单容器，比 Kafka 轻）；
+  2. 新增 `events/publisher.py`：轮询 `outbox` 把新事件发到主题 `agent-economy.events`（key = `aggregate_id`），并记录已发布的 seq；
+  3. `analytics/ingest.py` 抽象成 `EventSource` 接口，保留现在的轮询为默认，新增 `KafkaEventSource`（`confluent-kafka`，需确认 3.11/3.13 都有 wheel，写进可选依赖 `.[kafka]`）；
+  4. 用 `AL_EVENT_SOURCE=outbox|kafka` 切换。
+  - **只在本地演示**：Render 免费版跑不了额外的 Kafka 服务。验收：同一批事件走两条路径，生成的数仓完全一致，11 项数据质量检查都通过。
+- **T25 持久化存储（可选）· M**：Render 免费版磁盘是临时的，每次部署或重启数据都会清空。需要保留数据时：换成 Render 付费磁盘（挂载到 `/app/var`，设置 `AL_VAR_DIR`），或者把核心库迁到 PostgreSQL（工作量大，涉及 SQL 方言）。黑客松演示用不到。
 
 ### P3 — 收尾
 
@@ -228,7 +278,7 @@ sh scripts/check_compat.sh                                            # macOS/Li
 - **T20 Mistral 价格核实**：在 Mistral 账单上核对 `mistral-medium-latest` 的实际单价，更新 `agents/accounting.py` 的价格表，或设置 `AL_LLM_PRICE_IN/OUT`。
 
 ### 建议执行顺序
-`T1 → T2 → T3 → T4`（场景一闭环，可演示）→ `T5`（公网部署）→ `T7 → T8`（真智能体，工作量小、效果好）→ `T9 / T10` → `T11`（场景二）→ 其余。时间不够时从 P2 往下砍；**永远不砍**：交易演示、争议退款、对账与数据质量全绿、3.11/3.13 双绿。
+`T21 → T23`（小改动，保护线上演示和你的额度）→ `T1 → T2 → T3 → T4`（场景一闭环，可演示）→ `T7 → T8`（真智能体，工作量小、效果好）→ `T9 / T10` → `T11`（场景二）→ 其余；**每次正式演示前都做 T22**。时间不够时从 P2 往下砍；**永远不砍**：交易演示、争议退款、对账与数据质量全绿、3.11/3.13 双绿。
 
 ---
 
@@ -240,6 +290,8 @@ sh scripts/check_compat.sh                                            # macOS/Li
 - 演示钱包初始 $30、每日限额 $25（被拒的 hold 也计入）→ 连续约 6 轮后开始拒单；演示前点「重置演示」。
 - `tar` 遇到 `C:/...` 路径会当成远程主机 → 加 `--force-local`。
 - Mistral 会拒绝「工具结果之后紧跟用户消息」的消息顺序 → `graph.reflect_node` 已经插入了一条 AI 消息来绕开，不要删。
+- **Render**：网址是 https://agentledger-k4no.onrender.com（`agentledger.onrender.com` 是别人的项目）；Blueprint 是「手动同步」模式，改了 `render.yaml` 要到 Blueprint 页点同步；标为 `sync: false` 的变量只在第一次创建时提示填写，之后要到 Environment 页手动改；每次推送到 `main` 都会自动重新部署并清空数据。
+- 本机构建 Docker 镜像前要先打开 Docker Desktop（否则报 `dockerDesktopLinuxEngine` 找不到）。
 
 ---
 
@@ -258,6 +310,7 @@ sh scripts/check_compat.sh                                            # macOS/Li
 | 2026-10-08 | `4f1f99d` | 仓库初始化（LICENSE，Apache-2.0） |
 | 2026-10-08 | `5a854b7` | 首次提交：完整 MVP（经济核心、LLM 智能体、费用计量、数仓、前端、OPM、Docker/Render） |
 | 2026-10-08 | `94c9668` `9af9756` | 停止跟踪 `CLAUDE.md`，加入 `.gitignore` |
-| 2026-10-08 | 本次提交 | 前端补齐：交易大厅 AI 费用/LLM 调用 KPI、智能体信誉页 AI 成本表、共享后台回合（交易大厅不再阻塞，可跳转控制台实时观看）；新增 `progress.md`（借鉴 revenue_agent 的待办 T1–T10）；更新框架：OPM SD3 加后台回合/轮询/共享状态，SD4 加重置演示，OPM 指南缺口改指向 `progress.md`，README 架构图加入仲裁智能体、LLM 供应商和 token 计量 |
-| 2026-10-08 | 本次提交 | 部署：本机验证 Docker 镜像；Render Blueprint 部署主服务；删除可选卖方服务并从 `render.yaml` 移除（单服务）；README、团队计划、本文件同步 |
-| 2026-10-08 | 本次提交 | 记录线上网址 https://agentledger-k4no.onrender.com，远程检查通过；新增待办 T21（启动时自动注册并充值买方） |
+| 2026-10-08 | `52bd1d9` | 前端补齐：交易大厅 AI 费用/LLM 调用 KPI、智能体信誉页 AI 成本表、共享后台回合（交易大厅不再阻塞，可跳转控制台实时观看）；新增 `progress.md`（借鉴 revenue_agent 的待办 T1–T10）；更新框架：OPM SD3 加后台回合/轮询/共享状态，SD4 加重置演示，OPM 指南缺口改指向 `progress.md`，README 架构图加入仲裁智能体、LLM 供应商和 token 计量 |
+| 2026-10-08 | `ea7936b` | 部署：本机验证 Docker 镜像；Render Blueprint 部署主服务；删除可选卖方服务并从 `render.yaml` 移除（单服务）；README、团队计划、本文件同步 |
+| 2026-10-08 | `433c96e` | 记录线上网址 https://agentledger-k4no.onrender.com，远程检查通过；新增待办 T21（启动时自动注册并充值买方） |
+| 2026-10-08 | 本次提交 | 整理待办：T5 标记完成；新增 T22（线上演示前检查清单）、T23（公网费用保护）、T24（真 Kafka，可选）、T25（持久化，可选）；更新 T6、T15、执行顺序和 Render 常见坑 |
