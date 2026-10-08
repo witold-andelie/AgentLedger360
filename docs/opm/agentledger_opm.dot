@@ -198,7 +198,7 @@ digraph AgentLedger360_OPM {
     p3  [shape=ellipse, color="#1565C0", label=<3 Funding Buyer (once)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">ledger.fund</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R5]</FONT>>];
     p4  [shape=ellipse, color="#1565C0", label=<4 Assessing Tier<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">BuyerAgent.tier</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R6]</FONT>>];
     p5  [shape=ellipse, color="#1565C0", label=<5 Discovering &amp; Ranking<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">GET /registry/search, registry.search</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R1]</FONT>>];
-    p6  [shape=ellipse, color="#1565C0", label=<6 Quoting (HTTP 402)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">POST /agents/{id}/tasks, no X-Payment</FONT>>];
+    p6  [shape=ellipse, color="#1565C0", label=<6 Quoting (HTTP 402)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">POST /agents/{id}/tasks, optional 3-round counter to a hidden floor</FONT>>];
     p7  [shape=ellipse, color="#1565C0", label=<7 Holding in Escrow<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">POST /escrow/hold, escrow.hold; c: market not paused</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R2 R5 R6 R19]</FONT>>];
     p8  [shape=ellipse, color="#1565C0", label=<8 Delivering (paid)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">POST /agents/{id}/tasks + X-Payment; receipts.sign_content</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R5 R7]</FONT>>];
     p9  [shape=ellipse, color="#1565C0", label=<9 Recording Delivery<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">clearing house POST /orders/{id}/fetch, archive, escrow.mark_delivered</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R4 R7 R8]</FONT>>];

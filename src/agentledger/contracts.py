@@ -114,6 +114,7 @@ class PaymentRequired(BaseModel):
     expires_at: datetime
     task: TaskSpec
     acceptance: AcceptanceCriteria
+    negotiation_round: int = 0  # 0 = opening ask; seller allows at most 3 counters
 
 
 class HoldRequest(BaseModel):

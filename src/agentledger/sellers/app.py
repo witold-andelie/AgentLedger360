@@ -9,6 +9,7 @@ from datetime import UTC, date, datetime, timedelta
 
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import JSONResponse, PlainTextResponse
+from pydantic import BaseModel, Field
 
 from agentledger.config import Settings, load_settings
 from agentledger.contracts import AgentCard, Deliverable, PaymentRequired, TaskSpec, canonical_hash
@@ -17,13 +18,24 @@ from agentledger.economy import receipts
 from agentledger.sellers.catalog import SELLERS, frame_to_rows
 
 QUOTE_TTL = timedelta(minutes=5)
+MAX_COUNTERS = 3
+
+
+class CounterOffer(BaseModel):
+    amount_minor: int = Field(gt=0)
+
+
+def floor_minor(list_price: int) -> int:
+    """Seller will not go below 80% of the list price."""
+    return max(1, list_price * 80 // 100)
 
 SKILL_MD = """# Selling agents - onboarding for buyer agents
 1. GET /.well-known/agents.json -> agent cards (capability, price, endpoint)
 2. POST {endpoint}/tasks with a TaskSpec -> HTTP 402 + PaymentRequired quote
-3. Hold the quoted amount at the clearing house: POST /escrow/hold -> PaymentReceipt
-4. Repeat step 2 with header X-Payment: base64(PaymentReceipt JSON) -> Deliverable
-5. Verify against quote.acceptance; accept or dispute at the clearing house.
+3. Optional: POST {endpoint}/quotes/{quote_id}/counter with an offer, at most 3 rounds
+4. Hold the quoted amount at the clearing house: POST /escrow/hold -> PaymentReceipt
+5. Repeat step 2 with header X-Payment: base64(PaymentReceipt JSON) -> Deliverable
+6. Verify against quote.acceptance; accept or dispute at the clearing house.
 """
 
 
@@ -31,6 +43,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     s = settings or load_settings()
     app = FastAPI(title="AgentLedger sellers")
     quotes: dict[str, PaymentRequired] = {}
+    floors: dict[str, int] = {}
     redeemed: set[str] = set()
 
     @app.get("/health")
@@ -63,6 +76,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             quote = PaymentRequired(quote_id=new_id("q"), seller_agent_id=agent_id, amount_minor=seller.price_minor,
                                     expires_at=datetime.now(UTC) + QUOTE_TTL, task=spec, acceptance=seller.acceptance)
             quotes[quote.quote_id] = quote
+            floors[quote.quote_id] = floor_minor(seller.price_minor)
             return JSONResponse(status_code=402, content=quote.model_dump(mode="json"))
 
         # step 2: paid request
@@ -89,5 +103,29 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             content_signature=receipts.sign_content(s.payment_secret, agent_id, content_hash),
             meta={"seller": seller.name, "model": seller.description},
         )
+
+    @app.post("/agents/{agent_id}/quotes/{quote_id}/counter", response_model=None)
+    def counter(agent_id: str, quote_id: str, offer: CounterOffer) -> JSONResponse:
+        """Buyer counter-offer. At most 3 rounds. The seller never goes below its floor."""
+        quote = quotes.get(quote_id)
+        if quote is None or quote.seller_agent_id != agent_id:
+            raise HTTPException(404, "unknown quote")
+        if quote_id in redeemed:
+            raise HTTPException(409, "quote already redeemed")
+        if quote.negotiation_round >= MAX_COUNTERS:
+            raise HTTPException(409, "negotiation closed after 3 rounds")
+        floor = floors[quote_id]
+        quote.negotiation_round += 1
+        if offer.amount_minor >= quote.amount_minor or offer.amount_minor >= floor:
+            if offer.amount_minor < quote.amount_minor:
+                quote.amount_minor = offer.amount_minor
+            quotes[quote_id] = quote
+            return JSONResponse(status_code=200, content=quote.model_dump(mode="json"))
+        if quote.negotiation_round == MAX_COUNTERS:
+            quote.amount_minor = floor
+        else:
+            quote.amount_minor = max(floor, (quote.amount_minor + floor) // 2)
+        quotes[quote_id] = quote
+        return JSONResponse(status_code=402, content=quote.model_dump(mode="json"))
 
     return app
