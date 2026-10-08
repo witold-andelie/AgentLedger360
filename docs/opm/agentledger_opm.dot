@@ -201,7 +201,7 @@ digraph AgentLedger360_OPM {
     p6  [shape=ellipse, color="#1565C0", label=<6 Quoting (HTTP 402)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">POST /agents/{id}/tasks, no X-Payment</FONT>>];
     p7  [shape=ellipse, color="#1565C0", label=<7 Holding in Escrow<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">POST /escrow/hold, escrow.hold; c: market not paused</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R2 R5 R6 R19]</FONT>>];
     p8  [shape=ellipse, color="#1565C0", label=<8 Delivering (paid)<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">POST /agents/{id}/tasks + X-Payment; receipts.sign_content</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R5 R7]</FONT>>];
-    p9  [shape=ellipse, color="#1565C0", label=<9 Recording Delivery<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">escrow.mark_delivered, receipts.verify_content</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R4 R7]</FONT>>];
+    p9  [shape=ellipse, color="#1565C0", label=<9 Recording Delivery<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">clearing house POST /orders/{id}/fetch, archive, escrow.mark_delivered</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R4 R7 R8]</FONT>>];
     p10 [shape=ellipse, color="#1565C0", label=<10 Verifying Contract<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">market/quality.evaluate + backtest</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R10]</FONT>>];
     p11 [shape=ellipse, color="#1565C0", label=<11 Settling<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">POST /orders/{id}/accept, escrow.settle</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R2]</FONT>>];
     p12 [shape=ellipse, color="#1565C0", penwidth=2.4, label=<<B>12 Resolving Dispute</B><BR/><FONT POINT-SIZE="9" COLOR="#607D8B">POST /disputes, see SD2</FONT>>];

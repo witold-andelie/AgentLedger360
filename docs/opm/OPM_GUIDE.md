@@ -154,7 +154,7 @@ In an in-zoomed diagram, processes **from top to bottom = time order** (the orde
 | Price Oracle | environmental object | `market/data.py` | B |
 | Acceptance Criteria / Verifying | object / process | `market/quality.py`, `market/backtest.py` | B |
 | Signals (sellers' models) | — | `market/signals.py`, `market/features.py` | B |
-| Holding / Delivering / Recording Delivery / Settling | process | `escrow.hold`, `escrow.mark_delivered` (`receipts.verify_content`), `escrow.settle`, `platform_api.py` | A |
+| Holding / Delivering / Recording Delivery / Settling | process | `escrow.hold`, clearing-house `POST /orders/{id}/fetch` (archives rows), `escrow.mark_delivered`, `escrow.settle`, `platform_api.py` | A |
 | Expiring | process | `escrow.expire_undelivered` | A |
 | Resolving Dispute (SD2) | process | `economy/disputes.py` (`policy_band` / `validate`) | A |
 | Guardian Investigating (SD2) | process | `agents/guardian.py` | A |

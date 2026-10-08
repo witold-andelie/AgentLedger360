@@ -12,7 +12,6 @@ Policy enforced inside the tools, not in the prompt:
 from __future__ import annotations
 
 import re
-import time
 from collections.abc import Callable
 from datetime import date
 from typing import Any
@@ -28,7 +27,6 @@ from agentledger.contracts import (
     AgentRunReport,
     Capability,
     Deliverable,
-    DeliveryNotice,
     DisputeOutcome,
     DisputeRequest,
     HoldRequest,
@@ -36,9 +34,7 @@ from agentledger.contracts import (
     PaymentRequired,
     RankedCard,
     TaskSpec,
-    canonical_hash,
 )
-from agentledger.economy import receipts
 from agentledger.market import quality
 from agentledger.transport import Router
 
@@ -74,13 +70,17 @@ ORDER_ID = re.compile(r"\bord_[0-9a-f]{12}\b")
 
 class BuyerToolkit:
     def __init__(self, router: Router, platform_url: str, buyer_id: str, as_of: date | None,
-                 run_id: str) -> None:
+                 run_id: str, agent_key: str = "") -> None:
         self.http, self.platform, self.buyer_id, self.as_of, self.run_id = router, platform_url, buyer_id, as_of, run_id
+        self.agent_key = agent_key
         self.cards: dict[str, RankedCard] = {}
         self.quotes: dict[str, PaymentRequired] = {}
         self.by_order: dict[str, Purchase] = {}
         self.deliverables: dict[str, Deliverable] = {}
         self.purchases: list[Purchase] = []
+
+    def _auth(self) -> dict[str, str]:
+        return {"X-Agent-Key": self.agent_key}
 
     # ---------------------------------------------------------------- helpers
     def _wallet(self) -> dict[str, Any]:
@@ -158,7 +158,7 @@ class BuyerToolkit:
                 return f"policy: {q.seller_agent_id} already failed you on {symbol} in this run"
             p = Purchase(task=q.task, seller=kit.cards.get(q.seller_agent_id), quote=q)
             kit.purchases.append(p)
-            r = kit.http.post(f"{kit.platform}/escrow/hold", json=HoldRequest(
+            r = kit.http.post(f"{kit.platform}/escrow/hold", headers=kit._auth(), json=HoldRequest(
                 buyer_agent_id=kit.buyer_id, quote=q, idempotency_key=f"{kit.buyer_id}:{q.quote_id}",
             ).model_dump(mode="json"))
             if r.status_code != 200:
@@ -168,27 +168,12 @@ class BuyerToolkit:
             receipt = PaymentReceipt.model_validate(r.json())
             p.order_id = receipt.order_id
             kit.by_order[receipt.order_id] = p
-            t0 = time.perf_counter()
-            card = kit.cards[q.seller_agent_id]
-            r = kit.http.post(f"{card.endpoint}/tasks", json=q.task.model_dump(mode="json"),
-                              headers={"X-Payment": receipts.to_header(receipt)})
-            p.latency_ms = int((time.perf_counter() - t0) * 1000)
-            if not 200 <= r.status_code < 300:
-                p.status = "SELLER_ERROR"
-                p.notes.append(f"paid request returned HTTP {r.status_code}; escrow refunds on expiry")
-                return as_json({"order_id": p.order_id, "error": p.notes[-1]})
-            d = Deliverable.model_validate(r.json())
-            if canonical_hash(d.rows) != d.content_hash:  # seller signed something else than it shipped
-                p.status = "SELLER_ERROR"
-                p.notes.append("delivered rows do not match the seller-signed hash; delivery not recorded")
-                return as_json({"order_id": p.order_id, "error": p.notes[-1]})
-            rec = kit.http.post(f"{kit.platform}/orders/{p.order_id}/delivered", json=DeliveryNotice(
-                content_hash=d.content_hash, content_signature=d.content_signature, latency_ms=p.latency_ms,
-            ).model_dump())
+            rec = kit.http.post(f"{kit.platform}/orders/{p.order_id}/fetch", headers=kit._auth())
             if rec.status_code != 200:
                 p.status = "SELLER_ERROR"
-                p.notes.append(f"delivery rejected: {rec.json().get('detail', rec.text)}")
+                p.notes.append(f"clearing house rejected delivery: {rec.json().get('detail', rec.text)}")
                 return as_json({"order_id": p.order_id, "error": p.notes[-1]})
+            d = Deliverable.model_validate(rec.json())
             kit.deliverables[p.order_id] = d
             p.status = "DELIVERED"
             dates = [row.get("date") for row in d.rows if row.get("date")]
@@ -221,7 +206,8 @@ class BuyerToolkit:
             if not p.report.passed:
                 failed = [c.name for c in p.report.checks if not c.passed]
                 return f"policy: cannot accept, failed checks {failed} - open_dispute instead"
-            r = kit.http.post(f"{kit.platform}/orders/{order_id}/accept", json=p.report.model_dump(mode="json"))
+            r = kit.http.post(f"{kit.platform}/orders/{order_id}/accept", headers=kit._auth(),
+                              json=p.report.model_dump(mode="json"))
             if r.status_code != 200:
                 return f"error: {r.json().get('detail', r.text)}"
             p.status = "COMPLETED"
@@ -234,7 +220,7 @@ class BuyerToolkit:
             p, d = kit.by_order.get(order_id), kit.deliverables.get(order_id)
             if p is None or d is None or p.report is None:
                 return "policy: call verify_delivery first"
-            r = kit.http.post(f"{kit.platform}/disputes", json=DisputeRequest(
+            r = kit.http.post(f"{kit.platform}/disputes", headers=kit._auth(), json=DisputeRequest(
                 order_id=order_id, reason=reason, deliverable=d, parent_run_id=kit.run_id,
             ).model_dump(mode="json"))
             if r.status_code != 200:
@@ -273,6 +259,7 @@ def run_llm_buyer(
     *,
     model: Any = None,
     on_start: Callable[[str], None] | None = None,
+    agent_key: str = "",
 ) -> tuple[list[Purchase], AgentRunReport]:
     wanted = [x.strip().upper() for x in symbols if x.strip()]
     goal = (f"Acquire verified 5-day direction signals for {', '.join(wanted)} "
@@ -280,7 +267,7 @@ def run_llm_buyer(
     recorder = RunRecorder(s, agent_id=buyer_id, role="buyer", goal=goal)
     if on_start:
         on_start(recorder.run_id)
-    kit = BuyerToolkit(router, platform_url, buyer_id, as_of, recorder.run_id)
+    kit = BuyerToolkit(router, platform_url, buyer_id, as_of, recorder.run_id, agent_key)
     status, summary = "completed", ""
     try:
         graph = build_agent_graph(model=model or make_chat_model(s), tools=kit.tools(), recorder=recorder,

@@ -27,11 +27,11 @@ from pydantic import BaseModel, Field
 
 from agentledger.agents import accounting, llm, telemetry
 from agentledger.analytics import pipeline
+from agentledger.attacks import run_scenarios
 from agentledger.config import Settings, load_settings
 from agentledger.db import connect, transaction, verify_audit_chain, wipe_all
 from agentledger.economy import ledger
 from agentledger.governance import Capabilities, CapabilityGate
-from agentledger.platform_api import create_app as platform_app
 from agentledger.runner import BUYER, Market, run_summary, summarize
 from agentledger.sellers.app import create_app as seller_app
 
@@ -74,9 +74,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     gate = CapabilityGate(Capabilities.from_env())
     operator_token = s.admin_token or secrets.token_urlsafe(24)
-    platform = platform_app(s, operator_token=operator_token, gate=gate)
     sellers = None if s.seller_url else seller_app(s)
-    market = Market.in_process(s, platform, sellers, operator_token=operator_token, gate=gate)
+    market = Market.in_process(s, sellers=sellers, operator_token=operator_token, gate=gate)
     try:
         market.bootstrap()  # buyer wallet is funded before the first page view
     except Exception:
@@ -85,7 +84,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise
 
     app = FastAPI(title="AgentLedger 360")
-    app.mount("/platform", platform)
+    app.mount("/platform", market.platform)
     if sellers is not None:
         app.mount("/sellers", sellers)
 
@@ -170,6 +169,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         require_admin(x_admin_token)
         gate.paused = False
         return gate.snapshot()
+
+    @app.post("/api/attacks/run")
+    def attacks_run() -> list[dict[str, Any]]:
+        """Run the attack lab against a throwaway database. Does not spend LLM credit or touch the demo."""
+        return run_scenarios(s)
 
     @app.get("/api/audit/verify")
     def audit_verify() -> dict[str, bool | int | None]:

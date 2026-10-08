@@ -51,12 +51,13 @@ class Market:
         if gate is None:
             gate = CapabilityGate(Capabilities.from_env())
         router = Router()
-        platform_url = router.mount(
-            "platform", platform or platform_app(settings, operator_token=token, gate=gate),
-        )
+        # Build the platform after the router so /orders/{id}/fetch can call the sellers in-process.
+        built = platform or platform_app(settings, operator_token=token, gate=gate, router=router)
+        platform_url = router.mount("platform", built)
         seller_url = settings.seller_url or router.mount("sellers", sellers or seller_app(settings))
         market = cls(router, platform_url, seller_url.rstrip("/"), settings)
         market.operator_token = token
+        market.platform = built
         return market
 
     @contextmanager
@@ -83,6 +84,9 @@ class Market:
             headers={"X-Admin-Token": self.operator_token},
         )
         funded.raise_for_status()
+        agent_key = funded.json().get("agent_key")
+        if agent_key:
+            self.buyer.agent_key = agent_key
         self._ready = True
         return len(cards)
 
@@ -104,8 +108,10 @@ class Market:
                    on_start: Callable[[str], None] | None) -> list[Purchase]:
         from agentledger.agents.buyer_agent import run_llm_buyer  # needs the `.[agent]` extra
 
-        purchases, report = run_llm_buyer(self.settings, self.router, self.platform_url, BUYER.agent_id, symbols,
-                                          as_of, model=self.model, on_start=on_start)
+        purchases, report = run_llm_buyer(
+            self.settings, self.router, self.platform_url, BUYER.agent_id, symbols, as_of,
+            model=self.model, on_start=on_start, agent_key=self.buyer.agent_key,
+        )
         touched = sum(1 for p in purchases if p.order_id)
         self.router.post(f"{self.platform_url}/telemetry/agent-runs", params={"orders_touched": touched},
                          json=report.model_dump(mode="json")).raise_for_status()

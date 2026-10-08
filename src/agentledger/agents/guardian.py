@@ -42,7 +42,7 @@ class GuardianToolkit:
         conn = connect(s)
         try:
             self.order = dict(escrow.get_order(conn, req.order_id))
-            self.hash_ok, self.report = disputes.evidence(escrow.get_order(conn, req.order_id), req)
+            self.hash_ok, self.report = disputes.evidence(conn, escrow.get_order(conn, req.order_id))
             self.seller = self._track_record(conn, "seller_agent_id", self.order["seller_agent_id"])
             self.buyer = self._track_record(conn, "buyer_agent_id", self.order["buyer_agent_id"])
         finally:

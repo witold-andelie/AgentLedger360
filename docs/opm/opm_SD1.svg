@@ -33,39 +33,39 @@
 <!-- sd1_order -->
 <g id="node1" class="node">
 <title>sd1_order</title>
-<polygon fill="white" stroke="none" points="119,-1251.88 119,-1309.88 767,-1309.88 767,-1251.88 119,-1251.88"/>
-<text xml:space="preserve" text-anchor="start" x="314.75" y="-1293.43" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">Order</text>
-<text xml:space="preserve" text-anchor="start" x="344.75" y="-1293.43" font-family="Helvetica,sans-Serif" font-size="11.00"> </text>
-<text xml:space="preserve" text-anchor="start" x="347.75" y="-1293.43" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#607d8b">core.orders, contracts.OrderStatus, economy/escrow.py</text>
-<text xml:space="preserve" text-anchor="start" x="131" y="-1266.88" font-family="Helvetica,sans-Serif" font-size="11.00">FUNDS_HELD</text>
-<path fill="none" stroke="#8d6e63" d="M133.83,-1258.88C133.83,-1258.88 203.17,-1258.88 203.17,-1258.88 207.08,-1258.88 211,-1262.8 211,-1266.71 211,-1266.71 211,-1274.55 211,-1274.55 211,-1278.46 207.08,-1282.38 203.17,-1282.38 203.17,-1282.38 133.83,-1282.38 133.83,-1282.38 129.92,-1282.38 126,-1278.46 126,-1274.55 126,-1274.55 126,-1266.71 126,-1266.71 126,-1262.8 129.92,-1258.88 133.83,-1258.88"/>
-<text xml:space="preserve" text-anchor="start" x="223" y="-1266.88" font-family="Helvetica,sans-Serif" font-size="11.00">DELIVERED</text>
-<path fill="none" stroke="#8d6e63" d="M225.83,-1258.88C225.83,-1258.88 283.92,-1258.88 283.92,-1258.88 287.83,-1258.88 291.75,-1262.8 291.75,-1266.71 291.75,-1266.71 291.75,-1274.55 291.75,-1274.55 291.75,-1278.46 287.83,-1282.38 283.92,-1282.38 283.92,-1282.38 225.83,-1282.38 225.83,-1282.38 221.92,-1282.38 218,-1278.46 218,-1274.55 218,-1274.55 218,-1266.71 218,-1266.71 218,-1262.8 221.92,-1258.88 225.83,-1258.88"/>
-<text xml:space="preserve" text-anchor="start" x="303.75" y="-1266.88" font-family="Helvetica,sans-Serif" font-size="11.00">COMPLETED</text>
-<path fill="none" stroke="#8d6e63" d="M306.58,-1258.88C306.58,-1258.88 369.92,-1258.88 369.92,-1258.88 373.83,-1258.88 377.75,-1262.8 377.75,-1266.71 377.75,-1266.71 377.75,-1274.55 377.75,-1274.55 377.75,-1278.46 373.83,-1282.38 369.92,-1282.38 369.92,-1282.38 306.58,-1282.38 306.58,-1282.38 302.67,-1282.38 298.75,-1278.46 298.75,-1274.55 298.75,-1274.55 298.75,-1266.71 298.75,-1266.71 298.75,-1262.8 302.67,-1258.88 306.58,-1258.88"/>
-<text xml:space="preserve" text-anchor="start" x="389.75" y="-1266.88" font-family="Helvetica,sans-Serif" font-size="11.00">DISPUTED</text>
-<path fill="none" stroke="#8d6e63" d="M392.58,-1258.88C392.58,-1258.88 443.92,-1258.88 443.92,-1258.88 447.83,-1258.88 451.75,-1262.8 451.75,-1266.71 451.75,-1266.71 451.75,-1274.55 451.75,-1274.55 451.75,-1278.46 447.83,-1282.38 443.92,-1282.38 443.92,-1282.38 392.58,-1282.38 392.58,-1282.38 388.67,-1282.38 384.75,-1278.46 384.75,-1274.55 384.75,-1274.55 384.75,-1266.71 384.75,-1266.71 384.75,-1262.8 388.67,-1258.88 392.58,-1258.88"/>
-<text xml:space="preserve" text-anchor="start" x="463.75" y="-1266.88" font-family="Helvetica,sans-Serif" font-size="11.00">REFUNDED</text>
-<path fill="none" stroke="#8d6e63" d="M466.58,-1258.88C466.58,-1258.88 523.92,-1258.88 523.92,-1258.88 527.83,-1258.88 531.75,-1262.8 531.75,-1266.71 531.75,-1266.71 531.75,-1274.55 531.75,-1274.55 531.75,-1278.46 527.83,-1282.38 523.92,-1282.38 523.92,-1282.38 466.58,-1282.38 466.58,-1282.38 462.67,-1282.38 458.75,-1278.46 458.75,-1274.55 458.75,-1274.55 458.75,-1266.71 458.75,-1266.71 458.75,-1262.8 462.67,-1258.88 466.58,-1258.88"/>
-<text xml:space="preserve" text-anchor="start" x="543.75" y="-1266.88" font-family="Helvetica,sans-Serif" font-size="11.00">PARTIALLY_REFUNDED</text>
-<path fill="none" stroke="#8d6e63" d="M546.58,-1258.88C546.58,-1258.88 667.67,-1258.88 667.67,-1258.88 671.58,-1258.88 675.5,-1262.8 675.5,-1266.71 675.5,-1266.71 675.5,-1274.55 675.5,-1274.55 675.5,-1278.46 671.58,-1282.38 667.67,-1282.38 667.67,-1282.38 546.58,-1282.38 546.58,-1282.38 542.67,-1282.38 538.75,-1278.46 538.75,-1274.55 538.75,-1274.55 538.75,-1266.71 538.75,-1266.71 538.75,-1262.8 542.67,-1258.88 546.58,-1258.88"/>
-<text xml:space="preserve" text-anchor="start" x="687.5" y="-1266.88" font-family="Helvetica,sans-Serif" font-size="11.00">CANCELLED</text>
-<path fill="none" stroke="#8d6e63" d="M690.33,-1258.88C690.33,-1258.88 752.17,-1258.88 752.17,-1258.88 756.08,-1258.88 760,-1262.8 760,-1266.71 760,-1266.71 760,-1274.55 760,-1274.55 760,-1278.46 756.08,-1282.38 752.17,-1282.38 752.17,-1282.38 690.33,-1282.38 690.33,-1282.38 686.42,-1282.38 682.5,-1278.46 682.5,-1274.55 682.5,-1274.55 682.5,-1266.71 682.5,-1266.71 682.5,-1262.8 686.42,-1258.88 690.33,-1258.88"/>
-<polygon fill="none" stroke="#2e7d32" stroke-width="2" points="120,-1252.88 120,-1308.88 766,-1308.88 766,-1252.88 120,-1252.88"/>
+<polygon fill="white" stroke="none" points="182,-1251.88 182,-1309.88 830,-1309.88 830,-1251.88 182,-1251.88"/>
+<text xml:space="preserve" text-anchor="start" x="377.75" y="-1293.43" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00">Order</text>
+<text xml:space="preserve" text-anchor="start" x="407.75" y="-1293.43" font-family="Helvetica,sans-Serif" font-size="11.00"> </text>
+<text xml:space="preserve" text-anchor="start" x="410.75" y="-1293.43" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#607d8b">core.orders, contracts.OrderStatus, economy/escrow.py</text>
+<text xml:space="preserve" text-anchor="start" x="194" y="-1266.88" font-family="Helvetica,sans-Serif" font-size="11.00">FUNDS_HELD</text>
+<path fill="none" stroke="#8d6e63" d="M196.83,-1258.88C196.83,-1258.88 266.17,-1258.88 266.17,-1258.88 270.08,-1258.88 274,-1262.8 274,-1266.71 274,-1266.71 274,-1274.55 274,-1274.55 274,-1278.46 270.08,-1282.38 266.17,-1282.38 266.17,-1282.38 196.83,-1282.38 196.83,-1282.38 192.92,-1282.38 189,-1278.46 189,-1274.55 189,-1274.55 189,-1266.71 189,-1266.71 189,-1262.8 192.92,-1258.88 196.83,-1258.88"/>
+<text xml:space="preserve" text-anchor="start" x="286" y="-1266.88" font-family="Helvetica,sans-Serif" font-size="11.00">DELIVERED</text>
+<path fill="none" stroke="#8d6e63" d="M288.83,-1258.88C288.83,-1258.88 346.92,-1258.88 346.92,-1258.88 350.83,-1258.88 354.75,-1262.8 354.75,-1266.71 354.75,-1266.71 354.75,-1274.55 354.75,-1274.55 354.75,-1278.46 350.83,-1282.38 346.92,-1282.38 346.92,-1282.38 288.83,-1282.38 288.83,-1282.38 284.92,-1282.38 281,-1278.46 281,-1274.55 281,-1274.55 281,-1266.71 281,-1266.71 281,-1262.8 284.92,-1258.88 288.83,-1258.88"/>
+<text xml:space="preserve" text-anchor="start" x="366.75" y="-1266.88" font-family="Helvetica,sans-Serif" font-size="11.00">COMPLETED</text>
+<path fill="none" stroke="#8d6e63" d="M369.58,-1258.88C369.58,-1258.88 432.92,-1258.88 432.92,-1258.88 436.83,-1258.88 440.75,-1262.8 440.75,-1266.71 440.75,-1266.71 440.75,-1274.55 440.75,-1274.55 440.75,-1278.46 436.83,-1282.38 432.92,-1282.38 432.92,-1282.38 369.58,-1282.38 369.58,-1282.38 365.67,-1282.38 361.75,-1278.46 361.75,-1274.55 361.75,-1274.55 361.75,-1266.71 361.75,-1266.71 361.75,-1262.8 365.67,-1258.88 369.58,-1258.88"/>
+<text xml:space="preserve" text-anchor="start" x="452.75" y="-1266.88" font-family="Helvetica,sans-Serif" font-size="11.00">DISPUTED</text>
+<path fill="none" stroke="#8d6e63" d="M455.58,-1258.88C455.58,-1258.88 506.92,-1258.88 506.92,-1258.88 510.83,-1258.88 514.75,-1262.8 514.75,-1266.71 514.75,-1266.71 514.75,-1274.55 514.75,-1274.55 514.75,-1278.46 510.83,-1282.38 506.92,-1282.38 506.92,-1282.38 455.58,-1282.38 455.58,-1282.38 451.67,-1282.38 447.75,-1278.46 447.75,-1274.55 447.75,-1274.55 447.75,-1266.71 447.75,-1266.71 447.75,-1262.8 451.67,-1258.88 455.58,-1258.88"/>
+<text xml:space="preserve" text-anchor="start" x="526.75" y="-1266.88" font-family="Helvetica,sans-Serif" font-size="11.00">REFUNDED</text>
+<path fill="none" stroke="#8d6e63" d="M529.58,-1258.88C529.58,-1258.88 586.92,-1258.88 586.92,-1258.88 590.83,-1258.88 594.75,-1262.8 594.75,-1266.71 594.75,-1266.71 594.75,-1274.55 594.75,-1274.55 594.75,-1278.46 590.83,-1282.38 586.92,-1282.38 586.92,-1282.38 529.58,-1282.38 529.58,-1282.38 525.67,-1282.38 521.75,-1278.46 521.75,-1274.55 521.75,-1274.55 521.75,-1266.71 521.75,-1266.71 521.75,-1262.8 525.67,-1258.88 529.58,-1258.88"/>
+<text xml:space="preserve" text-anchor="start" x="606.75" y="-1266.88" font-family="Helvetica,sans-Serif" font-size="11.00">PARTIALLY_REFUNDED</text>
+<path fill="none" stroke="#8d6e63" d="M609.58,-1258.88C609.58,-1258.88 730.67,-1258.88 730.67,-1258.88 734.58,-1258.88 738.5,-1262.8 738.5,-1266.71 738.5,-1266.71 738.5,-1274.55 738.5,-1274.55 738.5,-1278.46 734.58,-1282.38 730.67,-1282.38 730.67,-1282.38 609.58,-1282.38 609.58,-1282.38 605.67,-1282.38 601.75,-1278.46 601.75,-1274.55 601.75,-1274.55 601.75,-1266.71 601.75,-1266.71 601.75,-1262.8 605.67,-1258.88 609.58,-1258.88"/>
+<text xml:space="preserve" text-anchor="start" x="750.5" y="-1266.88" font-family="Helvetica,sans-Serif" font-size="11.00">CANCELLED</text>
+<path fill="none" stroke="#8d6e63" d="M753.33,-1258.88C753.33,-1258.88 815.17,-1258.88 815.17,-1258.88 819.08,-1258.88 823,-1262.8 823,-1266.71 823,-1266.71 823,-1274.55 823,-1274.55 823,-1278.46 819.08,-1282.38 815.17,-1282.38 815.17,-1282.38 753.33,-1282.38 753.33,-1282.38 749.42,-1282.38 745.5,-1278.46 745.5,-1274.55 745.5,-1274.55 745.5,-1266.71 745.5,-1266.71 745.5,-1262.8 749.42,-1258.88 753.33,-1258.88"/>
+<polygon fill="none" stroke="#2e7d32" stroke-width="2" points="183,-1252.88 183,-1308.88 829,-1308.88 829,-1252.88 183,-1252.88"/>
 </g>
 <!-- p9 -->
 <g id="node30" class="node">
 <title>p9</title>
-<ellipse fill="none" stroke="#1565c0" stroke-width="1.6" cx="189" cy="-1188.72" rx="146.02" ry="26.16"/>
-<text xml:space="preserve" text-anchor="start" x="138.75" y="-1193.77" font-family="Helvetica,sans-Serif" font-size="11.00">9 Recording Delivery</text>
-<text xml:space="preserve" text-anchor="start" x="93.75" y="-1184.67" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#607d8b">escrow.mark_delivered, receipts.verify_content</text>
-<text xml:space="preserve" text-anchor="start" x="173.62" y="-1175.67" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#b26b00">[R4 R7]</text>
+<ellipse fill="none" stroke="#1565c0" stroke-width="1.6" cx="258" cy="-1188.72" rx="215.49" ry="26.16"/>
+<text xml:space="preserve" text-anchor="start" x="207.75" y="-1193.77" font-family="Helvetica,sans-Serif" font-size="11.00">9 Recording Delivery</text>
+<text xml:space="preserve" text-anchor="start" x="113.62" y="-1184.67" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#607d8b">clearing house POST /orders/{id}/fetch, archive, escrow.mark_delivered</text>
+<text xml:space="preserve" text-anchor="start" x="235.5" y="-1175.67" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#b26b00">[R4 R7 R8]</text>
 </g>
 <!-- sd1_order&#45;&gt;p9 -->
 <g id="edge46" class="edge">
 <title>sd1_order:held&#45;&gt;p9</title>
-<path fill="none" stroke="#455a64" d="M168.5,-1255.88C168.5,-1245.38 170.88,-1234.35 174.02,-1224.37"/>
-<polygon fill="#455a64" stroke="#455a64" points="176.61,-1225.46 176.58,-1216.98 171.32,-1223.63 176.61,-1225.46"/>
+<path fill="none" stroke="#455a64" d="M231.5,-1255.88C231.5,-1245.06 234.59,-1233.92 238.66,-1223.94"/>
+<polygon fill="#455a64" stroke="#455a64" points="241.1,-1225.33 241.81,-1216.88 235.99,-1223.04 241.1,-1225.33"/>
 </g>
 <!-- p11 -->
 <g id="node32" class="node">
@@ -78,8 +78,8 @@
 <!-- sd1_order&#45;&gt;p11 -->
 <g id="edge55" class="edge">
 <title>sd1_order:delivered&#45;&gt;p11</title>
-<path fill="none" stroke="#455a64" d="M254.88,-1255.88C254.88,-1224.75 511.34,-1253.22 534,-1231.88 584.98,-1183.86 575.43,-975.28 537,-916.73 534.52,-912.95 531.56,-909.41 528.3,-906.13"/>
-<polygon fill="#455a64" stroke="#455a64" points="530.2,-904.06 522.39,-900.76 526.43,-908.21 530.2,-904.06"/>
+<path fill="none" stroke="#455a64" d="M317.88,-1255.88C317.88,-1216.44 645.07,-1260.69 672,-1231.88 693.04,-1209.37 684.78,-1190.59 672,-1162.55 662.72,-1142.2 647.39,-1147.47 634,-1129.55 571.78,-1046.28 603.54,-996.59 537,-916.73 533.8,-912.89 530.16,-909.25 526.3,-905.83"/>
+<polygon fill="#455a64" stroke="#455a64" points="528.27,-903.82 520.31,-900.9 524.71,-908.14 528.27,-903.82"/>
 </g>
 <!-- p12 -->
 <g id="node33" class="node">
@@ -91,8 +91,8 @@
 <!-- sd1_order&#45;&gt;p12 -->
 <g id="edge61" class="edge">
 <title>sd1_order:delivered&#45;&gt;p12</title>
-<path fill="none" stroke="#455a64" d="M254.88,-1255.88C254.88,-1210.66 323.29,-1252.76 348,-1214.88 360.71,-1195.4 363.27,-1180.1 348,-1162.55 278.18,-1082.33 180.82,-1209.77 111,-1129.55 48.13,-1057.32 154.35,-949.34 210.13,-900.8"/>
-<polygon fill="#455a64" stroke="#455a64" points="211.92,-902.95 216.17,-895.61 208.28,-898.7 211.92,-902.95"/>
+<path fill="none" stroke="#455a64" d="M317.88,-1255.88C317.88,-1178.97 438.49,-1275.36 486,-1214.88 500.36,-1196.59 501.65,-1179.75 486,-1162.55 459.79,-1133.74 163.21,-1158.36 137,-1129.55 93.88,-1082.17 137.43,-1000.06 194,-916.73 197.85,-911.05 202.67,-905.67 207.74,-900.78"/>
+<polygon fill="#455a64" stroke="#455a64" points="209.57,-902.9 213.63,-895.45 205.82,-898.74 209.57,-902.9"/>
 </g>
 <!-- p_exp -->
 <g id="node35" class="node">
@@ -105,9 +105,9 @@
 <!-- sd1_order&#45;&gt;p_exp -->
 <g id="edge68" class="edge">
 <title>sd1_order:held&#45;&gt;p_exp</title>
-<path fill="none" stroke="#455a64" d="M168.5,-1255.88C168.5,-1236.55 501.16,-1229.33 514,-1214.88 529.45,-1197.49 527.67,-1181.37 514,-1162.55 486.12,-1124.17 440.38,-1167.93 412.5,-1129.55 398.83,-1110.74 398.93,-1096.12 412.5,-1077.23 425.5,-1059.14 440.59,-1072.17 460,-1061.23 546.68,-1012.37 547.83,-971.34 631,-916.73 639.24,-911.32 648.28,-906.14 657.28,-901.4"/>
-<polygon fill="#455a64" stroke="#455a64" points="658.32,-904.01 664.16,-897.86 655.76,-899.03 658.32,-904.01"/>
-<text xml:space="preserve" text-anchor="middle" x="486.75" y="-1100.09" font-family="Helvetica,sans-Serif" font-size="9.00">c: undelivered longer than order TTL</text>
+<path fill="none" stroke="#455a64" d="M231.5,-1255.88C231.5,-1225.26 475.54,-1234.98 506,-1231.88 570.99,-1225.26 608.56,-1263.67 652,-1214.88 667.46,-1197.51 667.06,-1180.27 652,-1162.55 592.93,-1093.08 508.57,-1199.02 449.5,-1129.55 434.44,-1111.84 438.84,-1097.89 449.5,-1077.23 455.13,-1066.32 462.44,-1068.92 472,-1061.23 546.38,-1001.34 552.14,-970.57 631,-916.73 638.95,-911.3 647.73,-906.16 656.5,-901.47"/>
+<polygon fill="#455a64" stroke="#455a64" points="657.73,-903.98 663.54,-897.81 655.15,-899.01 657.73,-903.98"/>
+<text xml:space="preserve" text-anchor="middle" x="523.75" y="-1100.09" font-family="Helvetica,sans-Serif" font-size="9.00">c: undelivered longer than order TTL</text>
 </g>
 <!-- sd1_money -->
 <g id="node2" class="node">
@@ -143,8 +143,8 @@
 <!-- sd1_money&#45;&gt;p11 -->
 <g id="edge57" class="edge">
 <title>sd1_money:escrow&#45;&gt;p11</title>
-<path fill="none" stroke="#455a64" d="M820.12,-951.23C820.12,-922.48 721.11,-933.25 693,-927.23 650.87,-918.19 604.34,-907.15 565.38,-897.59"/>
-<polygon fill="#455a64" stroke="#455a64" points="566.07,-894.88 557.64,-895.69 564.74,-900.32 566.07,-894.88"/>
+<path fill="none" stroke="#455a64" d="M820.12,-951.23C820.12,-922.04 719.54,-933.34 691,-927.23 649.15,-918.27 602.95,-907.21 564.31,-897.62"/>
+<polygon fill="#455a64" stroke="#455a64" points="565.08,-894.93 556.64,-895.71 563.72,-900.36 565.08,-894.93"/>
 </g>
 <!-- sd1_money&#45;&gt;p_exp -->
 <g id="edge70" class="edge">
@@ -172,17 +172,17 @@
 <!-- p5 -->
 <g id="node26" class="node">
 <title>p5</title>
-<ellipse fill="none" stroke="#1565c0" stroke-width="1.6" cx="815" cy="-645.74" rx="114.73" ry="26.16"/>
-<text xml:space="preserve" text-anchor="start" x="755.75" y="-650.79" font-family="Helvetica,sans-Serif" font-size="11.00">5 Discovering &amp; Ranking</text>
-<text xml:space="preserve" text-anchor="start" x="741.88" y="-641.69" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#607d8b">GET /registry/search, registry.search</text>
-<text xml:space="preserve" text-anchor="start" x="806.75" y="-632.69" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#b26b00">[R1]</text>
+<ellipse fill="none" stroke="#1565c0" stroke-width="1.6" cx="837" cy="-645.74" rx="114.73" ry="26.16"/>
+<text xml:space="preserve" text-anchor="start" x="777.75" y="-650.79" font-family="Helvetica,sans-Serif" font-size="11.00">5 Discovering &amp; Ranking</text>
+<text xml:space="preserve" text-anchor="start" x="763.88" y="-641.69" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#607d8b">GET /registry/search, registry.search</text>
+<text xml:space="preserve" text-anchor="start" x="828.75" y="-632.69" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#b26b00">[R1]</text>
 </g>
 <!-- sd1_tier&#45;&gt;p5 -->
 <g id="edge28" class="edge">
 <title>sd1_tier:dead&#45;&gt;p5</title>
-<path fill="none" stroke="#c62828" d="M868.38,-747.9C868.38,-722.17 854.7,-696.56 841.19,-677.55"/>
-<ellipse fill="none" stroke="#c62828" cx="839.21" cy="-674.85" rx="3.2" ry="3.2"/>
-<text xml:space="preserve" text-anchor="middle" x="892.46" y="-702.6" font-family="Helvetica,sans-Serif" font-size="9.00">c: skip if dead</text>
+<path fill="none" stroke="#c62828" d="M868.38,-747.9C868.38,-724.05 860.32,-698.4 852.37,-678.89"/>
+<ellipse fill="none" stroke="#c62828" cx="851.02" cy="-675.67" rx="3.2" ry="3.2"/>
+<text xml:space="preserve" text-anchor="middle" x="893.44" y="-702.6" font-family="Helvetica,sans-Serif" font-size="9.00">c: skip if dead</text>
 </g>
 <!-- sd1_quote -->
 <g id="node4" class="node">
@@ -277,8 +277,8 @@
 <!-- sd1_registry&#45;&gt;p5 -->
 <g id="edge29" class="edge">
 <title>sd1_registry&#45;&gt;p5</title>
-<path fill="none" stroke="#455a64" d="M1334.92,-1024.61C1332.83,-1019.69 1330.7,-1014.3 1329,-1009.23 1328.27,-1007.05 1250.77,-689.37 1249,-687.9 1223.26,-666.65 982.14,-675.88 949,-671.9 934.96,-670.22 920.18,-667.95 905.77,-665.46"/>
-<ellipse fill="none" stroke="#455a64" cx="902.37" cy="-664.86" rx="3.2" ry="3.2"/>
+<path fill="none" stroke="#455a64" d="M1334.92,-1024.61C1332.83,-1019.69 1330.7,-1014.3 1329,-1009.23 1328.27,-1007.05 1250.77,-689.37 1249,-687.9 1225.18,-668.16 1001.71,-675.65 971,-671.9 956.97,-670.19 942.19,-667.9 927.77,-665.41"/>
+<ellipse fill="none" stroke="#455a64" cx="924.38" cy="-664.81" rx="3.2" ry="3.2"/>
 </g>
 <!-- sd1_rep -->
 <g id="node8" class="node">
@@ -290,26 +290,26 @@
 <!-- sd1_rep&#45;&gt;p5 -->
 <g id="edge30" class="edge">
 <title>sd1_rep&#45;&gt;p5</title>
-<path fill="none" stroke="#455a64" d="M456.45,-754.1C530.87,-731.82 658.44,-693.62 739.65,-669.3"/>
-<ellipse fill="none" stroke="#455a64" cx="742.84" cy="-668.35" rx="3.2" ry="3.2"/>
+<path fill="none" stroke="#455a64" d="M459.57,-754.1C538.27,-731.72 673.39,-693.28 758.81,-668.98"/>
+<ellipse fill="none" stroke="#455a64" cx="762.34" cy="-667.98" rx="3.2" ry="3.2"/>
 </g>
 <!-- sd1_seller -->
 <g id="node9" class="node">
 <title>sd1_seller</title>
-<polygon fill="none" stroke="#2e7d32" stroke-width="1.6" points="1076.25,-1700.07 1001.75,-1700.07 1001.75,-1664.07 1076.25,-1664.07 1076.25,-1700.07"/>
-<text xml:space="preserve" text-anchor="start" x="1009.75" y="-1682.62" font-family="Helvetica,sans-Serif" font-size="11.00">Seller Agent</text>
-<text xml:space="preserve" text-anchor="start" x="1016.5" y="-1673.52" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#607d8b">SellerSpec</text>
+<polygon fill="none" stroke="#2e7d32" stroke-width="1.6" points="1101.25,-1700.07 1026.75,-1700.07 1026.75,-1664.07 1101.25,-1664.07 1101.25,-1700.07"/>
+<text xml:space="preserve" text-anchor="start" x="1034.75" y="-1682.62" font-family="Helvetica,sans-Serif" font-size="11.00">Seller Agent</text>
+<text xml:space="preserve" text-anchor="start" x="1041.5" y="-1673.52" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#607d8b">SellerSpec</text>
 </g>
 <!-- sd1_exh -->
 <g id="node10" class="node">
 <title>sd1_exh</title>
-<polygon fill="white" stroke="black" stroke-width="1.6" points="891,-1352.34 882,-1340.46 900,-1340.46 891,-1352.34"/>
-<polygon fill="none" stroke="black" stroke-width="1.6" points="891,-1358.97 873.95,-1336.46 908.05,-1336.46 891,-1358.97"/>
+<polygon fill="white" stroke="black" stroke-width="1.6" points="940,-1352.34 931,-1340.46 949,-1340.46 940,-1352.34"/>
+<polygon fill="none" stroke="black" stroke-width="1.6" points="940,-1358.97 922.95,-1336.46 957.05,-1336.46 940,-1358.97"/>
 </g>
 <!-- sd1_seller&#45;&gt;sd1_exh -->
 <g id="edge12" class="edge">
 <title>sd1_seller&#45;&gt;sd1_exh</title>
-<path fill="none" stroke="#455a64" d="M1031.25,-1663.49C1004.31,-1602.39 915.25,-1400.42 895.08,-1354.69"/>
+<path fill="none" stroke="#455a64" d="M1057.51,-1663.49C1035.03,-1602.66 960.98,-1402.2 943.65,-1355.3"/>
 </g>
 <!-- p1 -->
 <g id="node22" class="node">
@@ -321,14 +321,14 @@
 <!-- sd1_seller&#45;&gt;p1 -->
 <g id="edge16" class="edge">
 <title>sd1_seller&#45;&gt;p1</title>
-<path fill="none" stroke="#455a64" d="M1048.1,-1663.65C1073.41,-1615.19 1144.74,-1478.59 1174.6,-1421.43"/>
-<ellipse fill="none" stroke="#455a64" cx="1176.15" cy="-1418.46" rx="3.2" ry="3.2"/>
+<path fill="none" stroke="#455a64" d="M1071.57,-1663.65C1092.59,-1615.29 1151.76,-1479.14 1176.7,-1421.77"/>
+<ellipse fill="none" stroke="#455a64" cx="1178.09" cy="-1418.57" rx="3.2" ry="3.2"/>
 </g>
 <!-- sd1_exh&#45;&gt;sd1_rep -->
 <g id="edge13" class="edge">
 <title>sd1_exh&#45;&gt;sd1_rep</title>
-<path fill="none" stroke="#455a64" d="M883.9,-1335.99C852.04,-1302.05 721.93,-1157.03 679,-1009.23 670.82,-981.06 663.58,-968.18 679,-943.23 692.85,-920.82 707.05,-925.16 732,-916.73 768,-904.56 791.77,-930.01 816,-900.73 830.83,-882.81 831.34,-865.88 816,-848.4 767.8,-793.5 561.12,-822.59 490,-805.9 474.21,-802.2 457.33,-796.83 442.35,-791.55"/>
-<text xml:space="preserve" text-anchor="middle" x="745.7" y="-1100.09" font-family="Helvetica,sans-Serif" font-size="9.00">exhibits</text>
+<path fill="none" stroke="#455a64" d="M934.65,-1335.85C911.95,-1303.82 821.12,-1176.66 740,-1077.23 720.49,-1053.32 714.78,-1048.04 694,-1025.23 687.44,-1018.02 682.58,-1018.29 679,-1009.23 668.21,-981.95 663.58,-968.18 679,-943.23 692.85,-920.82 707.05,-925.16 732,-916.73 768,-904.56 791.77,-930.01 816,-900.73 830.83,-882.81 831.34,-865.88 816,-848.4 767.8,-793.5 561.12,-822.59 490,-805.9 474.21,-802.2 457.33,-796.83 442.35,-791.55"/>
+<text xml:space="preserve" text-anchor="middle" x="797.08" y="-1100.09" font-family="Helvetica,sans-Serif" font-size="9.00">exhibits</text>
 </g>
 <!-- sd1_mandate -->
 <g id="node11" class="node">
@@ -354,13 +354,13 @@
 <!-- sd1_exh2 -->
 <g id="node13" class="node">
 <title>sd1_exh2</title>
-<polygon fill="white" stroke="black" stroke-width="1.6" points="1362,-882.48 1353,-870.6 1371,-870.6 1362,-882.48"/>
-<polygon fill="none" stroke="black" stroke-width="1.6" points="1362,-889.11 1344.95,-866.6 1379.05,-866.6 1362,-889.11"/>
+<polygon fill="white" stroke="black" stroke-width="1.6" points="1354,-882.48 1345,-870.6 1363,-870.6 1354,-882.48"/>
+<polygon fill="none" stroke="black" stroke-width="1.6" points="1354,-889.11 1336.95,-866.6 1371.05,-866.6 1354,-889.11"/>
 </g>
 <!-- sd1_wallet&#45;&gt;sd1_exh2 -->
 <g id="edge14" class="edge">
 <title>sd1_wallet&#45;&gt;sd1_exh2</title>
-<path fill="none" stroke="#455a64" d="M1376.86,-957.87C1373.22,-937.68 1367.3,-904.9 1364.14,-887.42"/>
+<path fill="none" stroke="#455a64" d="M1375.47,-957.87C1370.12,-937.34 1361.37,-903.81 1356.87,-886.56"/>
 </g>
 <!-- p4 -->
 <g id="node25" class="node">
@@ -379,8 +379,8 @@
 <!-- sd1_exh2&#45;&gt;sd1_mandate -->
 <g id="edge15" class="edge">
 <title>sd1_exh2&#45;&gt;sd1_mandate</title>
-<path fill="none" stroke="#455a64" d="M1360.95,-865.97C1357.5,-840.94 1346.41,-760.62 1341.45,-724.63"/>
-<text xml:space="preserve" text-anchor="middle" x="1371.93" y="-823.85" font-family="Helvetica,sans-Serif" font-size="9.00">exhibits</text>
+<path fill="none" stroke="#455a64" d="M1353.32,-865.97C1351.06,-840.94 1343.83,-760.62 1340.6,-724.63"/>
+<text xml:space="preserve" text-anchor="middle" x="1365.96" y="-823.85" font-family="Helvetica,sans-Serif" font-size="9.00">exhibits</text>
 </g>
 <!-- sd1_ranked -->
 <g id="node14" class="node">
@@ -413,16 +413,16 @@
 <!-- p10 -->
 <g id="node31" class="node">
 <title>p10</title>
-<ellipse fill="none" stroke="#1565c0" stroke-width="1.6" cx="232" cy="-1103.39" rx="108.36" ry="26.16"/>
-<text xml:space="preserve" text-anchor="start" x="181.75" y="-1108.44" font-family="Helvetica,sans-Serif" font-size="11.00">10 Verifying Contract</text>
-<text xml:space="preserve" text-anchor="start" x="163.38" y="-1099.34" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#607d8b">market/quality.evaluate + backtest</text>
-<text xml:space="preserve" text-anchor="start" x="221.12" y="-1090.34" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#b26b00">[R10]</text>
+<ellipse fill="none" stroke="#1565c0" stroke-width="1.6" cx="258" cy="-1103.39" rx="108.36" ry="26.16"/>
+<text xml:space="preserve" text-anchor="start" x="207.75" y="-1108.44" font-family="Helvetica,sans-Serif" font-size="11.00">10 Verifying Contract</text>
+<text xml:space="preserve" text-anchor="start" x="189.38" y="-1099.34" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#607d8b">market/quality.evaluate + backtest</text>
+<text xml:space="preserve" text-anchor="start" x="247.12" y="-1090.34" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#b26b00">[R10]</text>
 </g>
 <!-- sd1_terms&#45;&gt;p10 -->
 <g id="edge49" class="edge">
 <title>sd1_terms&#45;&gt;p10</title>
-<path fill="none" stroke="#455a64" d="M601.1,-421.27C571.64,-442.26 521.01,-478.09 477,-508.08 232.59,-674.61 180.64,-673.51 148,-739.9 84.74,-868.54 97.23,-941.46 176,-1061.23 178.98,-1065.76 182.65,-1069.98 186.66,-1073.84"/>
-<ellipse fill="none" stroke="#455a64" cx="189.16" cy="-1076.08" rx="3.2" ry="3.2"/>
+<path fill="none" stroke="#455a64" d="M601.1,-421.27C571.64,-442.26 521.01,-478.09 477,-508.08 232.59,-674.61 180.64,-673.51 148,-739.9 84.52,-869 97.89,-948.29 187,-1061.23 191.24,-1066.6 196.38,-1071.4 201.94,-1075.66"/>
+<ellipse fill="none" stroke="#455a64" cx="204.62" cy="-1077.58" rx="3.2" ry="3.2"/>
 </g>
 <!-- sd1_receipt -->
 <g id="node16" class="node">
@@ -448,21 +448,21 @@
 <!-- sd1_deliv&#45;&gt;p10 -->
 <g id="edge48" class="edge">
 <title>sd1_deliv&#45;&gt;p10</title>
-<path fill="none" stroke="#455a64" d="M215.24,-44.44C155.81,-52.68 81.66,-66.27 57,-85 46.98,-92.61 44,-97.58 44,-110.16 44,-254.4 44,-254.4 44,-254.4 44,-345.22 98,-360.66 98,-451.48 98,-977.23 98,-977.23 98,-977.23 98,-1020.67 114.88,-1033.11 148,-1061.23 154.81,-1067.01 162.56,-1072.2 170.55,-1076.8"/>
-<ellipse fill="none" stroke="#455a64" cx="173.45" cy="-1078.41" rx="3.2" ry="3.2"/>
+<path fill="none" stroke="#455a64" d="M215.24,-44.44C155.81,-52.68 81.66,-66.27 57,-85 46.98,-92.61 44,-97.58 44,-110.16 44,-254.4 44,-254.4 44,-254.4 44,-345.22 98,-360.66 98,-451.48 98,-977.23 98,-977.23 98,-977.23 98,-1022.34 118.7,-1034.44 155,-1061.23 164.24,-1068.05 174.76,-1073.92 185.47,-1078.92"/>
+<ellipse fill="none" stroke="#455a64" cx="188.77" cy="-1080.41" rx="3.2" ry="3.2"/>
 </g>
 <!-- sd1_oracle -->
 <g id="node18" class="node">
 <title>sd1_oracle</title>
-<polygon fill="none" stroke="#2e7d32" stroke-width="1.6" stroke-dasharray="5,2" points="501.12,-1206.72 386.88,-1206.72 386.88,-1170.72 501.12,-1170.72 501.12,-1206.72"/>
-<text xml:space="preserve" text-anchor="start" x="414.38" y="-1189.27" font-family="Helvetica,sans-Serif" font-size="11.00">Price Oracle</text>
-<text xml:space="preserve" text-anchor="start" x="394.88" y="-1180.17" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#607d8b">market/data.load_prices</text>
+<polygon fill="none" stroke="#2e7d32" stroke-width="1.6" stroke-dasharray="5,2" points="639.12,-1206.72 524.88,-1206.72 524.88,-1170.72 639.12,-1170.72 639.12,-1206.72"/>
+<text xml:space="preserve" text-anchor="start" x="552.38" y="-1189.27" font-family="Helvetica,sans-Serif" font-size="11.00">Price Oracle</text>
+<text xml:space="preserve" text-anchor="start" x="532.88" y="-1180.17" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#607d8b">market/data.load_prices</text>
 </g>
 <!-- sd1_oracle&#45;&gt;p10 -->
 <g id="edge50" class="edge">
 <title>sd1_oracle&#45;&gt;p10</title>
-<path fill="none" stroke="#455a64" d="M398.78,-1169.94C368.46,-1158.02 328.11,-1142.16 294.69,-1129.03"/>
-<ellipse fill="none" stroke="#455a64" cx="291.55" cy="-1127.8" rx="3.2" ry="3.2"/>
+<path fill="none" stroke="#455a64" d="M530.68,-1170.04C522.46,-1167.4 514.03,-1164.82 506,-1162.55 453.26,-1147.67 393.48,-1133.57 345.82,-1122.98"/>
+<ellipse fill="none" stroke="#455a64" cx="342.5" cy="-1122.24" rx="3.2" ry="3.2"/>
 </g>
 <!-- sd1_outbox -->
 <g id="node19" class="node">
@@ -481,8 +481,8 @@
 <!-- sd1_llm&#45;&gt;p5 -->
 <g id="edge32" class="edge">
 <title>sd1_llm&#45;&gt;p5</title>
-<path fill="none" stroke="#455a64" d="M1012.49,-754.31C999.55,-745.91 984.59,-735.23 972.5,-723.9 957.61,-709.95 960.78,-699.51 944,-687.9 931.68,-679.38 917.49,-672.55 903.14,-667.1"/>
-<ellipse fill="none" stroke="#455a64" cx="900.01" cy="-665.96" rx="3.2" ry="3.2"/>
+<path fill="none" stroke="#455a64" d="M1012.49,-754.31C999.55,-745.91 984.59,-735.23 972.5,-723.9 957.61,-709.95 960.44,-699.99 944,-687.9 934.55,-680.95 923.78,-675.02 912.8,-670.01"/>
+<ellipse fill="none" stroke="#455a64" cx="909.71" cy="-668.65" rx="3.2" ry="3.2"/>
 <text xml:space="preserve" text-anchor="middle" x="1109.75" y="-702.6" font-family="Helvetica,sans-Serif" font-size="9.00">c: AL_AGENT_MODE=llm &#45; chooses steps 5&#45;12 through tools (SD5)</text>
 </g>
 <!-- sd1_buyer -->
@@ -530,9 +530,9 @@
 <!-- p3&#45;&gt;sd1_money -->
 <g id="edge21" class="edge">
 <title>p3&#45;&gt;sd1_money:buyer</title>
-<path fill="none" stroke="#455a64" d="M1103.82,-1092.48C969.08,-1075.77 717.38,-1040.71 691.25,-1009.23 675.07,-989.73 673.5,-970.3 691.25,-952.23 705.57,-937.64 734.52,-929.71 743.22,-942.14"/>
+<path fill="none" stroke="#455a64" d="M1110.02,-1089.07C971.88,-1065.31 697.95,-1017.3 691.25,-1009.23 675.07,-989.73 673.5,-970.3 691.25,-952.23 705.57,-937.64 734.52,-929.71 743.22,-942.14"/>
 <polygon fill="#455a64" stroke="#455a64" points="740.5,-942.81 745.34,-949.77 745.9,-941.31 740.5,-942.81"/>
-<text xml:space="preserve" text-anchor="middle" x="917.97" y="-1039.93" font-family="Helvetica,sans-Serif" font-size="9.00">mint from treasury</text>
+<text xml:space="preserve" text-anchor="middle" x="979.36" y="-1039.93" font-family="Helvetica,sans-Serif" font-size="9.00">mint from treasury</text>
 </g>
 <!-- p3&#45;&gt;p4 -->
 <!-- p4&#45;&gt;sd1_tier -->
@@ -563,8 +563,8 @@
 <!-- p5&#45;&gt;sd1_ranked -->
 <g id="edge31" class="edge">
 <title>p5&#45;&gt;sd1_ranked</title>
-<path fill="none" stroke="#455a64" d="M824.82,-619.29C827.75,-611.7 830.96,-603.37 833.91,-595.73"/>
-<polygon fill="#455a64" stroke="#455a64" points="836.4,-597.06 836.67,-588.59 831.17,-595.04 836.4,-597.06"/>
+<path fill="none" stroke="#455a64" d="M839.41,-618.87C840.08,-611.63 840.82,-603.75 841.5,-596.45"/>
+<polygon fill="#455a64" stroke="#455a64" points="844.28,-596.71 842.24,-588.49 838.71,-596.19 844.28,-596.71"/>
 </g>
 <!-- p5&#45;&gt;p6 -->
 <!-- p6&#45;&gt;sd1_quote -->
@@ -583,8 +583,8 @@
 <!-- p7&#45;&gt;sd1_order -->
 <g id="edge40" class="edge">
 <title>p7&#45;&gt;sd1_order:held</title>
-<path fill="none" stroke="#455a64" d="M476.57,-327.2C436.91,-374.81 344.62,-477.83 245,-534.58 153.12,-586.91 17,-496.83 17,-602.58 17,-1189.72 17,-1189.72 17,-1189.72 17,-1245.86 58.93,-1268.24 113.73,-1270.45"/>
-<polygon fill="#455a64" stroke="#455a64" points="113.43,-1273.24 121.49,-1270.6 113.54,-1267.64 113.43,-1273.24"/>
+<path fill="none" stroke="#455a64" d="M476.57,-327.2C436.91,-374.81 344.62,-477.83 245,-534.58 153.12,-586.91 17,-496.83 17,-602.58 17,-1189.72 17,-1189.72 17,-1189.72 17,-1202.3 20.52,-1206.59 30,-1214.88 83.04,-1261.27 110,-1269.93 176.76,-1270.59"/>
+<polygon fill="#455a64" stroke="#455a64" points="176.47,-1273.38 184.49,-1270.62 176.5,-1267.78 176.47,-1273.38"/>
 </g>
 <!-- p7&#45;&gt;sd1_money -->
 <g id="edge39" class="edge">
@@ -630,26 +630,26 @@
 <!-- p9&#45;&gt;sd1_order -->
 <g id="edge47" class="edge">
 <title>p9&#45;&gt;sd1_order:delivered</title>
-<path fill="none" stroke="#455a64" d="M231.46,-1214.48C241.82,-1223.2 250.8,-1234.06 253.81,-1246.78"/>
-<polygon fill="#455a64" stroke="#455a64" points="250.98,-1246.76 254.7,-1254.38 256.55,-1246.1 250.98,-1246.76"/>
+<path fill="none" stroke="#455a64" d="M296.26,-1214.95C305.7,-1223.7 313.94,-1234.44 316.8,-1246.69"/>
+<polygon fill="#455a64" stroke="#455a64" points="313.99,-1246.75 317.7,-1254.38 319.55,-1246.11 313.99,-1246.75"/>
 </g>
 <!-- p9&#45;&gt;p10 -->
 <!-- p9&#45;&gt;p13 -->
 <g id="edge64" class="edge">
 <title>p9&#45;&gt;p13</title>
-<path fill="none" stroke="#1565c0" stroke-width="2" d="M98.17,-1167.67C85.79,-1162.23 73.94,-1155.32 64,-1146.55 48.45,-1132.83 44,-1125.13 44,-1104.39 44,-1104.39 44,-1104.39 44,-528.33 44,-414.8 117.25,-295.48 156.63,-239.55"/>
+<path fill="none" stroke="#1565c0" stroke-width="2" d="M122.34,-1167.76C96.66,-1161.95 74.54,-1154.88 64,-1146.55 47.72,-1133.7 44,-1125.13 44,-1104.39 44,-1104.39 44,-1104.39 44,-528.33 44,-414.8 117.25,-295.48 156.63,-239.55"/>
 <polygon fill="#1565c0" stroke="#1565c0" stroke-width="2" points="160.54,-234.07 158.83,-242.67 160.04,-235.63 156.3,-240.87 155.89,-240.58 155.49,-240.29 159.22,-235.05 152.96,-238.49 160.54,-234.07"/>
 </g>
 <!-- p10&#45;&gt;sd1_report -->
 <g id="edge51" class="edge">
 <title>p10&#45;&gt;sd1_report:passed</title>
-<path fill="none" stroke="#455a64" d="M219.06,-1076.73C201.96,-1040.3 177.4,-976.91 208.19,-967.23"/>
-<polygon fill="#455a64" stroke="#455a64" points="208.21,-970.06 215.75,-966.19 207.44,-964.51 208.21,-970.06"/>
+<path fill="none" stroke="#455a64" d="M235.3,-1077.14C208.41,-1044.18 171.28,-986.64 205.25,-952.23 214.87,-942.48 258.95,-936.78 275.14,-944.03"/>
+<polygon fill="#455a64" stroke="#455a64" points="272.89,-945.7 280.16,-950.06 277.19,-942.12 272.89,-945.7"/>
 </g>
 <!-- p10&#45;&gt;sd1_report -->
 <g id="edge52" class="edge">
 <title>p10&#45;&gt;sd1_report:failed</title>
-<path fill="none" stroke="#455a64" d="M306.89,-1083.88C371.25,-1066.27 456.75,-1038.24 476.75,-1009.23 491.13,-988.37 494.54,-970.27 476.75,-952.23 467.79,-943.14 427.03,-937.76 411.45,-944.27"/>
+<path fill="none" stroke="#455a64" d="M348.03,-1088.21C394.84,-1075.77 448.13,-1052.53 476.75,-1009.23 490.72,-988.09 494.54,-970.27 476.75,-952.23 467.79,-943.14 427.03,-937.76 411.45,-944.27"/>
 <polygon fill="#455a64" stroke="#455a64" points="409.53,-942.22 406.37,-950.09 413.74,-945.9 409.53,-942.22"/>
 </g>
 <!-- p10&#45;&gt;p11 -->
@@ -657,13 +657,13 @@
 <!-- p11&#45;&gt;sd1_order -->
 <g id="edge56" class="edge">
 <title>p11&#45;&gt;sd1_order:completed</title>
-<path fill="none" stroke="#455a64" d="M524.58,-899.45C532.51,-904.57 540.33,-910.38 547,-916.73 609.12,-975.81 629.16,-995.17 654,-1077.23 660.74,-1099.49 663.3,-1108.24 654,-1129.55 620.85,-1205.52 576.9,-1216.74 541,-1231.88 502.3,-1248.2 361.48,-1215.99 340.8,-1247.11"/>
-<polygon fill="#455a64" stroke="#455a64" points="338.21,-1245.96 338.67,-1254.43 343.59,-1247.52 338.21,-1245.96"/>
+<path fill="none" stroke="#455a64" d="M522.22,-899.67C530.98,-904.97 539.95,-910.78 548,-916.73 562.05,-927.1 565,-930.55 577,-943.23 603.06,-970.75 605.71,-981 631,-1009.23 652.6,-1033.33 657.73,-1039.81 682,-1061.23 690.8,-1068.99 697.79,-1066.71 703,-1077.23 730.38,-1132.52 701.67,-1155.47 685,-1214.88 682.84,-1222.59 685.34,-1226.97 679,-1231.88 656.71,-1249.14 444.91,-1229.2 407.03,-1248.83"/>
+<polygon fill="#455a64" stroke="#455a64" points="405.12,-1246.75 402.21,-1254.71 409.45,-1250.3 405.12,-1246.75"/>
 </g>
 <!-- p11&#45;&gt;sd1_money -->
 <g id="edge58" class="edge">
 <title>p11&#45;&gt;sd1_money:seller</title>
-<path fill="none" stroke="#455a64" d="M565.18,-893.44C635.31,-907.8 723.55,-925.81 732,-927.23 749.46,-930.17 875.08,-930.91 905.25,-944.73"/>
+<path fill="none" stroke="#455a64" d="M564.23,-893.76C624.73,-906.39 700.27,-921.89 732,-927.23 749.46,-930.17 875.08,-930.91 905.25,-944.73"/>
 <polygon fill="#455a64" stroke="#455a64" points="903.04,-946.48 910.68,-950.16 907,-942.52 903.04,-946.48"/>
 </g>
 <!-- p11&#45;&gt;sd1_money -->
@@ -689,9 +689,9 @@
 <!-- p12&#45;&gt;sd1_order -->
 <g id="edge62" class="edge">
 <title>p12&#45;&gt;sd1_order:disputed</title>
-<path fill="none" stroke="#455a64" stroke-dasharray="5,2" d="M300.34,-890.35C371.38,-908.25 481.79,-936.83 489,-943.23 582.47,-1026.25 615.83,-1102.04 562,-1214.88 556.83,-1225.72 551.88,-1226.8 541,-1231.88 518.77,-1242.26 440.12,-1231.36 422,-1247.78"/>
-<polygon fill="#455a64" stroke="#455a64" points="419.7,-1246.07 418.89,-1254.51 424.79,-1248.42 419.7,-1246.07"/>
-<text xml:space="preserve" text-anchor="middle" x="603.91" y="-1100.09" font-family="Helvetica,sans-Serif" font-size="9.00">via SD2</text>
+<path fill="none" stroke="#455a64" stroke-dasharray="5,2" d="M299.42,-890.6C370.12,-908.92 480.81,-938.1 489,-943.23 544.4,-977.92 661.69,-1101.49 685,-1162.55 689.39,-1174.04 696.25,-1218.04 679,-1231.88 647.17,-1257.42 505.97,-1218.65 484.1,-1247.11"/>
+<polygon fill="#455a64" stroke="#455a64" points="481.53,-1245.97 481.72,-1254.44 486.85,-1247.7 481.53,-1245.97"/>
+<text xml:space="preserve" text-anchor="middle" x="683.53" y="-1100.09" font-family="Helvetica,sans-Serif" font-size="9.00">via SD2</text>
 </g>
 <!-- p12&#45;&gt;p13 -->
 <g id="edge66" class="edge">
@@ -708,8 +708,8 @@
 <!-- p_exp&#45;&gt;sd1_order -->
 <g id="edge69" class="edge">
 <title>p_exp&#45;&gt;sd1_order:cancelled</title>
-<path fill="none" stroke="#455a64" d="M684.68,-899.97C673.34,-911.63 662.11,-926.65 658,-943.23 624.65,-1077.74 716.94,-1112.56 721.11,-1246.49"/>
-<polygon fill="#455a64" stroke="#455a64" points="718.3,-1246.41 721.23,-1254.37 723.9,-1246.32 718.3,-1246.41"/>
+<path fill="none" stroke="#455a64" d="M679.83,-899.47C674.24,-904.63 668.99,-910.44 665,-916.73 642.92,-951.54 643.74,-970.54 658,-1009.23 658.86,-1011.56 714.69,-1075.12 716,-1077.23 759.31,-1146.67 782.49,-1169.21 784.15,-1246.67"/>
+<polygon fill="#455a64" stroke="#455a64" points="781.35,-1246.4 784.23,-1254.37 786.95,-1246.34 781.35,-1246.4"/>
 </g>
 <!-- p_exp&#45;&gt;sd1_money -->
 <g id="edge71" class="edge">
@@ -742,15 +742,15 @@
 <!-- lg_proc2 -->
 <g id="node41" class="node">
 <title>lg_proc2</title>
-<ellipse fill="none" stroke="#1565c0" stroke-width="1.6" cx="1549" cy="-1394.77" rx="36.16" ry="18"/>
-<text xml:space="preserve" text-anchor="middle" x="1549" y="-1391.07" font-family="Helvetica,sans-Serif" font-size="11.00">Process </text>
+<ellipse fill="none" stroke="#1565c0" stroke-width="1.6" cx="1563" cy="-1394.77" rx="36.16" ry="18"/>
+<text xml:space="preserve" text-anchor="middle" x="1563" y="-1391.07" font-family="Helvetica,sans-Serif" font-size="11.00">Process </text>
 </g>
 <!-- lg_obj&#45;&gt;lg_proc2 -->
 <g id="edge74" class="edge">
 <title>lg_obj&#45;&gt;lg_proc2</title>
-<path fill="none" stroke="#455a64" d="M1497.04,-1663.4C1495.37,-1621.5 1494.65,-1513.47 1525.25,-1430.57 1526.81,-1426.33 1529,-1422.12 1531.42,-1418.16"/>
-<ellipse fill="none" stroke="#455a64" cx="1533.33" cy="-1415.27" rx="3.2" ry="3.2"/>
-<text xml:space="preserve" text-anchor="middle" x="1546.62" y="-1432.52" font-family="Helvetica,sans-Serif" font-size="9.00">instrument</text>
+<path fill="none" stroke="#455a64" d="M1495.42,-1663.42C1490.03,-1620.65 1481.27,-1509.23 1522.25,-1430.57 1525.41,-1424.51 1530.11,-1419.06 1535.2,-1414.37"/>
+<ellipse fill="none" stroke="#455a64" cx="1538.01" cy="-1411.99" rx="3.2" ry="3.2"/>
+<text xml:space="preserve" text-anchor="middle" x="1543.62" y="-1432.52" font-family="Helvetica,sans-Serif" font-size="9.00">instrument</text>
 </g>
 <!-- lg_phys -->
 <g id="node37" class="node">
@@ -762,9 +762,9 @@
 <!-- lg_phys&#45;&gt;lg_proc2 -->
 <g id="edge75" class="edge">
 <title>lg_phys&#45;&gt;lg_proc2</title>
-<path fill="none" stroke="#455a64" d="M1624.46,-1659.59C1618.74,-1615.41 1602.7,-1511.64 1570,-1430.57 1568.41,-1426.62 1566.41,-1422.61 1564.27,-1418.78"/>
-<ellipse fill="#455a64" stroke="#455a64" cx="1562.48" cy="-1415.73" rx="3.2" ry="3.2"/>
-<text xml:space="preserve" text-anchor="middle" x="1602.53" y="-1432.52" font-family="Helvetica,sans-Serif" font-size="9.00">agent (human)</text>
+<path fill="none" stroke="#455a64" d="M1622.19,-1659.62C1610.53,-1607.66 1580.83,-1475.24 1568.5,-1420.27"/>
+<ellipse fill="#455a64" stroke="#455a64" cx="1567.75" cy="-1416.96" rx="3.2" ry="3.2"/>
+<text xml:space="preserve" text-anchor="middle" x="1602.29" y="-1432.52" font-family="Helvetica,sans-Serif" font-size="9.00">agent (human)</text>
 </g>
 <!-- lg_env -->
 <g id="node38" class="node">

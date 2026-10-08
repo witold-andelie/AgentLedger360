@@ -171,7 +171,8 @@ class QualityReport(BaseModel):
 class DisputeRequest(BaseModel):
     order_id: str
     reason: str
-    deliverable: Deliverable  # the adjudicator recomputes the hash and re-runs the checks
+    # Ignored by the clearing house. The adjudicator re-runs checks on the archived delivery.
+    deliverable: Deliverable | None = None
     parent_run_id: str | None = None  # buyer agent run that opened the dispute (links the two traces)
 
 

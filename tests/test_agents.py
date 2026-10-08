@@ -96,12 +96,16 @@ def _disputed_rsi_order(conn):
                               s.payment_secret)
     rows = frame_to_rows(spec.produce(task))
     h = canonical_hash(rows)
+    deliverable = Deliverable(
+        order_id=receipt.order_id, seller_agent_id="sig-rsi", capability=Capability.SIGNAL_5D,
+        symbol="MSFT", as_of=AS_OF, columns=list(rows[0]), rows=rows, content_hash=h,
+        content_signature=receipts.sign_content(s.payment_secret, "sig-rsi", h),
+    )
     with transaction(conn):
         escrow.mark_delivered(conn, receipt.order_id, DeliveryNotice(
-            content_hash=h, content_signature=receipts.sign_content(s.payment_secret, "sig-rsi", h), latency_ms=3),
+            content_hash=h, content_signature=deliverable.content_signature, latency_ms=3),
             s.payment_secret)
-    deliverable = Deliverable(order_id=receipt.order_id, seller_agent_id="sig-rsi", capability=Capability.SIGNAL_5D,
-                              symbol="MSFT", as_of=AS_OF, columns=list(rows[0]), rows=rows, content_hash=h)
+        disputes.archive(conn, deliverable)
     return DisputeRequest(order_id=receipt.order_id, reason="hit rate too low", deliverable=deliverable)
 
 

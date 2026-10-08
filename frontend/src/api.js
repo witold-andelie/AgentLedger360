@@ -65,6 +65,9 @@ export const api = {
 
   /** GET /api/audit/verify -> { ok, first_bad_seq } */
   auditVerify: () => request('/api/audit/verify'),
+
+  /** POST /api/attacks/run -> [{ id, title, blocked, rule, http_status, detail }] */
+  runAttacks: () => request('/api/attacks/run', { method: 'POST' }),
 }
 
 export const fmt = {

@@ -9,9 +9,12 @@ from __future__ import annotations
 import json
 import sqlite3
 from dataclasses import dataclass
+from datetime import date
 
 from agentledger.contracts import (
     AcceptanceCriteria,
+    Capability,
+    Deliverable,
     DisputeDecision,
     DisputeOutcome,
     DisputeRequest,
@@ -40,12 +43,38 @@ class PolicyBand:
     failed_checks: tuple[str, ...]
 
 
-def evidence(order: sqlite3.Row, req: DisputeRequest) -> tuple[bool, QualityReport]:
-    """(hash_ok, re-executed report). A hash mismatch means the submitted rows are not what was delivered."""
-    if canonical_hash(req.deliverable.rows) != order["content_hash"]:
+def archive(conn: sqlite3.Connection, deliverable: Deliverable) -> None:
+    """Store the rows the clearing house actually received. Disputes read only this row."""
+    conn.execute(
+        "INSERT INTO deliveries (order_id, rows_json, content_hash, seller_signature, as_of, received_at)"
+        " VALUES (?,?,?,?,?,?)",
+        (deliverable.order_id, json.dumps(deliverable.rows), deliverable.content_hash,
+         deliverable.content_signature, deliverable.as_of.isoformat(), now_iso()),
+    )
+
+
+def archived_deliverable(conn: sqlite3.Connection, order: sqlite3.Row) -> Deliverable | None:
+    """The rows the clearing house fetched itself. The buyer's copy is never the evidence."""
+    row = conn.execute("SELECT * FROM deliveries WHERE order_id = ?", (order["order_id"],)).fetchone()
+    if row is None:
+        return None
+    rows = json.loads(row["rows_json"])
+    return Deliverable(
+        order_id=order["order_id"], seller_agent_id=order["seller_agent_id"],
+        capability=Capability(order["capability"]), symbol=order["symbol"],
+        as_of=date.fromisoformat(row["as_of"]),
+        columns=list(rows[0].keys()) if rows else [], rows=rows,
+        content_hash=row["content_hash"], content_signature=row["seller_signature"],
+    )
+
+
+def evidence(conn: sqlite3.Connection, order: sqlite3.Row) -> tuple[bool, QualityReport]:
+    """(hash_ok, re-executed report) from the delivery archive, not from either party's claim."""
+    archived = archived_deliverable(conn, order)
+    if archived is None or canonical_hash(archived.rows) != order["content_hash"]:
         return False, QualityReport(passed=True, score=1.0, checks=[], evidence_hash="")
     criteria = AcceptanceCriteria.model_validate_json(order["acceptance_json"])
-    return True, quality.evaluate(req.deliverable, criteria)
+    return True, quality.evaluate(archived, criteria)
 
 
 def policy_band(hash_ok: bool, report: QualityReport) -> PolicyBand:
@@ -103,7 +132,7 @@ def open_and_resolve(conn: sqlite3.Connection, req: DisputeRequest, fee_bps: int
     emit_event(conn, EventType.DISPUTE_OPENED, req.order_id,
                {**escrow._event_base(order), "status": str(OrderStatus.DISPUTED), "reason": req.reason})
 
-    hash_ok, report = evidence(order, req)  # re-derived here too: never trust a proposal's own evidence
+    hash_ok, report = evidence(conn, order)  # archive only: never trust a proposal's own evidence
     band = policy_band(hash_ok, report)
     pct, rationale, source, summary = band.default_pct, band.reason, "rule-table", None
     if ruling is not None:

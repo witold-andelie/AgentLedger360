@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Activity, Bot, ShieldCheck, Store, Users } from 'lucide-react'
+import { Activity, Bot, Shield, ShieldCheck, Store, Users } from 'lucide-react'
 import Market from './pages/Market'
 import Agents from './pages/Agents'
 import Customer360 from './pages/Customer360'
 import DataQuality from './pages/DataQuality'
 import AgentConsole from './pages/AgentConsole'
+import AttackLab from './pages/AttackLab'
 import { useT } from './i18n.jsx'
 import { AgentRoundProvider } from './agentRound.jsx'
 
@@ -16,6 +17,7 @@ const VIEWS = [
   { id: 'agents', label: 'Agents', icon: Activity, Page: Agents },
   { id: 'customer360', label: 'Customer 360', icon: Users, Page: Customer360 },
   { id: 'quality', label: 'Data quality', icon: ShieldCheck, Page: DataQuality },
+  { id: 'attacks', label: 'Attack lab', icon: Shield, Page: AttackLab },
 ]
 
 export default function App() {
