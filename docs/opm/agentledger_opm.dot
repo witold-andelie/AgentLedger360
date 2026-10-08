@@ -2,6 +2,7 @@
 // AgentLedger 360 - OPM (Object-Process Methodology, ISO 19450) rule-framework diagram
 // Render:  dot -Tsvg docs/opm/agentledger_opm.dot -o docs/opm/agentledger_opm.svg
 // Companion text (OPL sentences, code map, rules): docs/opm/OPM_GUIDE.md  -- keep both in sync.
+// Current state + backlog (T1-T20, planned processes not yet modelled here): progress.md
 //
 // OPD hierarchy
 //   SD   System Diagram ............ the system function and its environment
@@ -399,8 +400,18 @@ digraph AgentLedger360_OPM {
         </TR>
       </TABLE>>];
     sd3_runs   [shape=box, color="#2E7D32", label=<Pipeline Run Log<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">analytics.pipeline_runs</FONT>>];
-    sd3_json   [shape=box, color="#2E7D32", label=<API JSON<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">/api/summary, /api/events, /api/round</FONT>>];
-    sd3_pages  [shape=box, color="#2E7D32", label=<React Pages<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">frontend/src/pages/* via api.js only</FONT>>];
+    sd3_json   [shape=box, color="#2E7D32", label=<API JSON<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">/api/summary (incl. ai_costs, ai_models), /api/events, /api/agent/*</FONT>>];
+    sd3_job [shape=plaintext, label=<
+      <TABLE BORDER="2" COLOR="#2E7D32" CELLBORDER="0" CELLSPACING="3" CELLPADDING="2" BGCOLOR="white">
+        <TR><TD COLSPAN="3"><B>Background Round Job</B> <FONT POINT-SIZE="9" COLOR="#607D8B">server.py jobs, POST /api/agent/rounds</FONT></TD></TR>
+        <TR>
+          <TD PORT="running"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>running</TD></TR></TABLE></TD>
+          <TD PORT="completed"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>completed</TD></TR></TABLE></TD>
+          <TD PORT="failed"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>failed</TD></TR></TABLE></TD>
+        </TR>
+      </TABLE>>];
+    sd3_shared [shape=box, color="#2E7D32", label=<Shared Round State<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">frontend/src/agentRound.jsx (Market + Agent Console, one round at a time)</FONT>>];
+    sd3_pages  [shape=box, color="#2E7D32", label=<React Pages<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">Market (AI spend KPIs), Agent Console (live trace + cost),<BR/>Agents (AI cost tables), Customer 360, Data quality</FONT>>];
     sd3_viewer [shape=box, color="#2E7D32", peripheries=2, style=dashed, label=<Viewer (jury)>];
 
     a1 [shape=ellipse, color="#1565C0", label=<Ingesting Events<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">analytics/ingest.py (Kafka-shaped)</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R11]</FONT>>];
@@ -412,11 +423,13 @@ digraph AgentLedger360_OPM {
     a5 [shape=ellipse, color="#1565C0", label=<Logging Run<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">every task, success/failed/upstream_failed</FONT>>];
     a6 [shape=ellipse, color="#1565C0", label=<Serving API<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">server.py</FONT>>];
     a7 [shape=ellipse, color="#1565C0", label=<Rendering Dashboard<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">frontend (rules: docs/FRONTEND_RULES.md)</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R14]</FONT>>];
+    a9 [shape=ellipse, color="#1565C0", label=<Running Round in Background<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">server thread -&gt; runner.Market.run_round (SD1)</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R17]</FONT>>];
+    a10 [shape=ellipse, color="#1565C0", label=<Polling Round<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">agentRound.jsx, every 1.5 s</FONT>>];
 
     a1 -> a2 [style=invis, weight=10]; a1 -> a3 [style=invis, weight=10];
     a1 -> a8 [style=invis, weight=10];
     {rank=same; a2; a3; a8;}
-    a8 -> a4 [style=invis]; a2 -> a4 [style=invis]; a3 -> a4 [style=invis]; a4 -> a5 [style=invis]; a5 -> a6 [style=invis]; a6 -> a7 [style=invis];
+    a8 -> a4 [style=invis]; a2 -> a4 [style=invis]; a3 -> a4 [style=invis]; a4 -> a5 [style=invis]; a5 -> a6 [style=invis]; a6 -> a7 [style=invis]; a7 -> a9 [style=invis]; a9 -> a10 [style=invis];
 
     sd3_outbox -> a1 [arrowhead=odot, label="seq > cursor"];
     a1 -> sd3_cursor [dir=both];
@@ -443,6 +456,14 @@ digraph AgentLedger360_OPM {
     sd3_json -> a7 [arrowhead=odot];
     a7 -> sd3_pages;
     sd3_viewer -> a7 [arrowhead=dot];
+    sd3_viewer -> a9 [arrowhead=dot, label="Run round"];
+    a9 -> sd3_job:running;
+    sd3_job:running -> a10 [arrowhead=odot];
+    a10 -> sd3_shared [dir=both];
+    a9 -> sd3_job:completed [style=dashed, label="then rebuilds marts"];
+    a9 -> sd3_job:failed [style=dashed];
+    sd3_job:completed -> a1 [style=bold, color="#1565C0", arrowhead=vee, label="invokes pipeline"];
+    sd3_shared -> a7 [arrowhead=odot];
   }
 
 
@@ -560,10 +581,20 @@ digraph AgentLedger360_OPM {
     d7 [shape=ellipse, color="#1565C0", label=<Deploying>];
     d8 [shape=ellipse, color="#1565C0", label=<Warming Up<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">open /api/health 5 min before pitch</FONT>>];
     d9 [shape=ellipse, color="#1565C0", label=<Presenting Demo<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">docs/TEAM_PLAN.md demo script</FONT>>];
+    d10 [shape=ellipse, color="#1565C0", label=<Resetting Demo<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">POST /api/demo/reset, ResetDemoButton</FONT><BR/><FONT POINT-SIZE="9" COLOR="#B26B00">[R3 R12]</FONT>>];
+    sd4_token [shape=box, color="#2E7D32", label=<Admin Token<BR/><FONT POINT-SIZE="9" COLOR="#607D8B">AL_ADMIN_TOKEN (generated on Render)</FONT>>];
+    sd4_data [shape=plaintext, label=<
+      <TABLE BORDER="2" COLOR="#2E7D32" CELLBORDER="0" CELLSPACING="3" CELLPADDING="2" BGCOLOR="white">
+        <TR><TD COLSPAN="2"><B>Demo Data</B> <FONT POINT-SIZE="9" COLOR="#607D8B">core + analytics rows (db.wipe_all)</FONT></TD></TR>
+        <TR>
+          <TD PORT="used"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>used (wallet drained)</TD></TR></TABLE></TD>
+          <TD PORT="fresh"><TABLE STYLE="rounded" BORDER="1" COLOR="#8D6E63" CELLBORDER="0"><TR><TD>fresh (wallet $30, 0 orders)</TD></TR></TABLE></TD>
+        </TR>
+      </TABLE>>];
 
     d1 -> d2 [style=invis, weight=10]; d1 -> d3 [style=invis, weight=10];
     {rank=same; d2; d3;}
-    d2 -> d4 [style=invis]; d3 -> d4 [style=invis]; d4 -> d5 -> d6 -> d7 -> d8 -> d9 [style=invis, weight=10];
+    d2 -> d4 [style=invis]; d3 -> d4 [style=invis]; d4 -> d5 -> d6 -> d7 -> d8 -> d10 -> d9 [style=invis, weight=10];
 
     sd4_code -> sd4_agg [arrowhead=none];
     sd4_agg -> sd4_contract [arrowhead=none];
@@ -594,6 +625,11 @@ digraph AgentLedger360_OPM {
     d8 -> sd4_render:awake;
     sd4_render:awake -> d9 [arrowhead=odot, label="c"];
     sd4_presenter -> d9 [arrowhead=dot];
+    sd4_presenter -> d10 [arrowhead=dot];
+    sd4_token -> d10 [arrowhead=odot, label="c: required if set"];
+    sd4_data:used -> d10;
+    d10 -> sd4_data:fresh [label="re-registers sellers, refills buyer"];
+    sd4_data:fresh -> d9 [arrowhead=odot];
     d9 -> sd4_jury [dir=both, style=dashed, label="persuades"];
   }
 

@@ -15,6 +15,7 @@ Every state change goes through a transactional **outbox** into an event-sourced
 > All money is simulated, in integer minor units.
 
 **System model:** `docs/opm/` (OPM diagram in DOT, rendered SVGs, OPL guide). Agents start at `AGENTS.md`.
+**Status and backlog:** `progress.md`.
 
 ## Real AI agents (and what they cost)
 
@@ -50,16 +51,25 @@ flowchart LR
       DSP[Dispute adjudicator]
       OUT[(Outbox)]
     end
-    BUY[Buyer agent - portfolio manager]
+    BUY[Buyer agent - LangGraph LLM]
+    GRD[Guardian agent - LangGraph LLM]
+    LLM[(LLM provider: Mistral / Claude / DeepSeek)]
+    MET[Token meter: tokens + micro-USD, budgets]
     BUY -- 1 discover --> REG
     BUY -- 2 task, gets 402 quote --> S1
     BUY -- 3 hold funds --> ESC
     BUY -- 4 task + X-Payment receipt --> S1
     BUY -- 5 accept or dispute --> DSP
+    DSP -- investigate, propose ruling --> GRD
+    GRD -- ruling validated by policy band --> DSP
+    BUY -.-> LLM
+    GRD -.-> LLM
+    LLM -.-> MET
     ESC --> OUT
     DSP --> OUT
-    OUT --> ING[Ingest - Kafka-shaped poller] --> WH[(analytics: facts, dims, KPI views)]
-    WH --> API[FastAPI /api] --> UI[React frontend]
+    MET -- llm.usage, agent.run.finished --> OUT
+    OUT --> ING[Ingest - Kafka-shaped poller] --> WH[(analytics: facts, dims, KPI + AI cost views)]
+    WH --> API[FastAPI /api + background rounds] --> UI[React: Market, Agent Console, Agents, Customer 360, Data quality]
 ```
 
 ## Quickstart (one laptop)

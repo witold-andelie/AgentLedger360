@@ -1,39 +1,39 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { Eye } from 'lucide-react'
 import { api, fmt } from '../api'
 import FlowStrip from '../components/FlowStrip'
 import KpiRow from '../components/KpiRow'
 import PageState from '../components/PageState'
 import ResetDemoButton from '../components/ResetDemoButton'
 import RoundTable from '../components/RoundTable'
+import { totalsOf, useAgentRound } from '../agentRound.jsx'
 import { useT } from '../i18n.jsx'
 import { usePageData } from '../usePageData'
 
-export default function Market() {
+export default function Market({ onNavigate }) {
   const { t } = useT()
   const load = useCallback(() => api.summary(), [])
   const page = usePageData(load)
+  const round = useAgentRound()
+  const { job, busy: running, startError, pollError, elapsed } = round
   const [symbols, setSymbols] = useState('AAPL, MSFT, NVDA')
-  const [running, setRunning] = useState(false)
-  const [roundError, setRoundError] = useState(null)
-  const [purchases, setPurchases] = useState(null)
-  const [reconciliation, setReconciliation] = useState(null)
 
-  async function runRound() {
-    const list = symbols.split(',').map((s) => s.trim()).filter(Boolean)
-    setRunning(true)
-    setRoundError(null)
-    try {
-      const body = await api.runRound(list, 1)
-      setPurchases(body.purchases || [])
-      setReconciliation(body.reconciliation || null)
-      page.reload()
-    } catch (err) {
-      setRoundError(err)
-    } finally {
-      setRunning(false)
-    }
+  // The round runs in the background (shared with Agent Console); refresh the KPIs when it ends.
+  const reload = page.reload
+  const jobStatus = job?.status
+  useEffect(() => {
+    if (jobStatus && jobStatus !== 'running') reload()
+  }, [jobStatus, reload])
+
+  function runRound() {
+    round.start(symbols.split(',').map((s) => s.trim()).filter(Boolean))
   }
 
+  const finished = job && job.status !== 'running'
+  const purchases = finished ? job.purchases : null
+  const reconciliation = finished ? job.result?.reconciliation || null : null
+  const roundError = startError || (job?.status === 'failed' ? new Error(job.error) : null)
+  const live = totalsOf(job?.run)
   const kpi = page.data?.kpi
   const empty = (kpi?.orders ?? 0) === 0 && purchases === null
 
@@ -59,13 +59,26 @@ export default function Market() {
               {t('Run market round')}
             </button>
             <ResetDemoButton disabled={running} onDone={() => {
-              setPurchases(null)
-              setReconciliation(null)
-              setRoundError(null)
+              round.clear()
               page.reload()
             }} />
           </form>
-          {running && <p className="muted" role="status">{t('Agents are trading…')}</p>}
+          {running && (
+            <div className="round-progress" role="status">
+              <p className="muted">
+                {t('Agents are trading…')}
+                {elapsed !== null ? ` ${elapsed}s` : ''}
+                {job?.run ? ` · ${live.steps} ${t('steps')} · ${fmt.microUsd(live.cost)} ${t('AI spend so far')}` : ''}
+              </p>
+              {job?.run && onNavigate && (
+                <button type="button" className="btn btn-icon" onClick={() => onNavigate('console')}>
+                  <Eye size={16} aria-hidden="true" />
+                  {t('Watch live in Agent Console')}
+                </button>
+              )}
+            </div>
+          )}
+          {pollError && running && <p className="form-error" role="status">{t('Connection hiccup, retrying…')} {pollError.message}</p>}
           {roundError && (
             <p className="form-error" role="alert">
               {roundError.message}

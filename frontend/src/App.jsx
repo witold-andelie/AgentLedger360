@@ -6,6 +6,7 @@ import Customer360 from './pages/Customer360'
 import DataQuality from './pages/DataQuality'
 import AgentConsole from './pages/AgentConsole'
 import { useT } from './i18n.jsx'
+import { AgentRoundProvider } from './agentRound.jsx'
 
 // Shell only: header, tab navigation, language toggle, view switch. Page content lives in pages/.
 // Navigation is plain state (no router), same as EuroGoal. Add a view = add one entry here.
@@ -55,7 +56,9 @@ export default function App() {
         </div>
       </header>
       <main className="app-main">
-        <Page />
+        <AgentRoundProvider>
+          <Page onNavigate={setView} />
+        </AgentRoundProvider>
       </main>
     </div>
   )

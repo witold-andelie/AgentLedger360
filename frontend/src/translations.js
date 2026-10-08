@@ -166,4 +166,18 @@ export const ZH = {
     '确定重置演示吗？所有订单、智能体运行和 AI 费用都会被删除，买方钱包恢复初始余额。',
   'Admin token': '管理员令牌',
   'Demo reset: buyer wallet refilled to': '演示已重置：买方钱包恢复为',
+
+  // ── AI cost (Market KPIs, Agents page) ───────────
+  'LLM tokens, estimate': 'LLM token 费用（估算）',
+  'agent runs': '次智能体运行',
+  'steps': '步',
+  'AI spend so far': 'AI 费用（累计）',
+  'Watch live in Agent Console': '到智能体控制台实时观看',
+  'AI cost by agent': 'AI 成本（按智能体）',
+  'AI cost by model': 'AI 成本（按模型）',
+  'No AI agent runs yet (rule mode or no round run).': '还没有 AI 智能体运行（规则模式或尚未运行）。',
+  'Runs': '运行次数',
+  'Budget stops': '预算停止',
+  'Model': '模型',
+  'Costs are estimates from the price table; verify on the provider bill.': '费用按价格表估算，请以供应商账单为准。',
 }

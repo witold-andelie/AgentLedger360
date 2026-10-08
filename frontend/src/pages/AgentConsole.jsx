@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Loader2, Play } from 'lucide-react'
 import { api, fmt } from '../api'
 import AgentHeader from '../components/AgentHeader'
@@ -8,31 +8,9 @@ import PageState from '../components/PageState'
 import ResetDemoButton from '../components/ResetDemoButton'
 import RoundTable from '../components/RoundTable'
 import RunHistory from '../components/RunHistory'
+import { totalsOf, useAgentRound } from '../agentRound.jsx'
 import { useT } from '../i18n.jsx'
 import { usePageData } from '../usePageData'
-
-const POLL_MS = 1500
-
-/** Totals over the buyer run and the guardian runs it triggered (cost in integer micro-USD). */
-function totalsOf(run) {
-  const zero = { llmCalls: 0, toolCalls: 0, inputTokens: 0, outputTokens: 0, cost: 0, buyerCost: 0,
-                 guardianCost: 0, buyerLlmCalls: 0, guardianLlmCalls: 0 }
-  if (!run) return zero
-  return [run, ...(run.children || [])].reduce((acc, r) => {
-    const guardian = r.role === 'guardian'
-    return {
-      llmCalls: acc.llmCalls + r.llm_calls,
-      toolCalls: acc.toolCalls + r.tool_calls,
-      inputTokens: acc.inputTokens + r.input_tokens,
-      outputTokens: acc.outputTokens + r.output_tokens,
-      cost: acc.cost + r.cost_micro_usd,
-      buyerCost: acc.buyerCost + (guardian ? 0 : r.cost_micro_usd),
-      guardianCost: acc.guardianCost + (guardian ? r.cost_micro_usd : 0),
-      buyerLlmCalls: acc.buyerLlmCalls + (guardian ? 0 : r.llm_calls),
-      guardianLlmCalls: acc.guardianLlmCalls + (guardian ? r.llm_calls : 0),
-    }
-  }, zero)
-}
 
 function Economics({ purchases, aiCost }) {
   const { t } = useT()
@@ -60,76 +38,29 @@ export default function AgentConsole() {
   const page = usePageData(loadHealth)
   const health = page.data
   const [symbols, setSymbols] = useState('AAPL, MSFT, NVDA')
-  const [starting, setStarting] = useState(false)
-  const [jobId, setJobId] = useState(null)
-  const [job, setJob] = useState(null)
-  const [startError, setStartError] = useState(null)
-  const [pollError, setPollError] = useState(null)
+  const round = useAgentRound()
+  const { job, busy, startError, pollError, elapsed } = round
   const [selected, setSelected] = useState(null)
+  const [openError, setOpenError] = useState(null)
   const [historyNonce, setHistoryNonce] = useState(0)
-  const [now, setNow] = useState(() => Date.now())
-  const busy = starting || job?.status === 'running'
 
-  // Poll the background job until it leaves "running"; one job at a time, cleaned up on unmount.
-  useEffect(() => {
-    if (!jobId) return undefined
-    let cancelled = false
-    let timer = null
-    async function poll() {
-      try {
-        const next = await api.agentRound(jobId)
-        if (cancelled) return
-        setJob(next)
-        setPollError(null)
-        if (next.status === 'running') timer = setTimeout(poll, POLL_MS)
-        else setHistoryNonce((n) => n + 1)
-      } catch (err) {
-        if (cancelled) return
-        setPollError(err)
-        timer = setTimeout(poll, POLL_MS * 2) // transient (e.g. server busy): keep trying
-      }
-    }
-    poll()
-    return () => { cancelled = true; clearTimeout(timer) }
-  }, [jobId])
-
-  // Elapsed-time clock while a round runs.
-  useEffect(() => {
-    if (!busy) return undefined
-    const id = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(id)
-  }, [busy])
-
-  async function start() {
-    const list = symbols.split(',').map((s) => s.trim()).filter(Boolean)
-    if (list.length === 0 || busy) return
-    setStarting(true)
-    setStartError(null)
+  function start() {
     setSelected(null)
-    setJob(null)
-    try {
-      const { job_id: id } = await api.startAgentRound(list)
-      setJobId(id)
-    } catch (err) {
-      setStartError(err)
-    } finally {
-      setStarting(false)
-    }
+    round.start(symbols.split(',').map((s) => s.trim()).filter(Boolean))
   }
 
   async function openRun(runId) {
     try {
       setSelected(await api.agentRun(runId))
+      setOpenError(null)
     } catch (err) {
-      setStartError(err)
+      setOpenError(err)
     }
   }
 
   const liveRun = job?.run || null
   const shownRun = busy ? liveRun : selected || liveRun
   const totals = totalsOf(shownRun)
-  const startedAt = liveRun?.started_at ? Date.parse(liveRun.started_at) : null
-  const elapsed = busy && startedAt ? Math.max(0, Math.round((now - startedAt) / 1000)) : null
   const finished = job && job.status !== 'running' && !selected
   const llmMode = health?.agent_mode === 'llm'
 
@@ -155,10 +86,8 @@ export default function AgentConsole() {
               {t('Run agent round')}
             </button>
             <ResetDemoButton health={health} disabled={busy} onDone={() => {
-              setJobId(null)
-              setJob(null)
+              round.clear()
               setSelected(null)
-              setStartError(null)
               setHistoryNonce((n) => n + 1)
               page.reload()
             }} />
@@ -174,9 +103,9 @@ export default function AgentConsole() {
             </p>
           )}
           {pollError && busy && <p className="form-error" role="status">{t('Connection hiccup, retrying…')} {pollError.message}</p>}
-          {(startError || job?.status === 'failed') && (
+          {(startError || openError || job?.status === 'failed') && (
             <p className="form-error" role="alert">
-              {startError?.message || job?.error}
+              {startError?.message || openError?.message || job?.error}
               <button type="button" className="btn" onClick={start} disabled={busy}>{t('Retry')}</button>
             </p>
           )}
@@ -215,7 +144,7 @@ export default function AgentConsole() {
           </section>
         )}
 
-        <RunHistory nonce={historyNonce} selectedId={selected?.run_id} onSelect={openRun} />
+        <RunHistory nonce={historyNonce + round.finishedCount} selectedId={selected?.run_id} onSelect={openRun} />
       </div>
     </PageState>
   )

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api'
 import AgentCardGrid from '../components/AgentCardGrid'
 import AgentTable from '../components/AgentTable'
+import AiCostTables from '../components/AiCostTables'
 import PageState from '../components/PageState'
 import ReputationBars from '../components/ReputationBars'
 import { useT } from '../i18n.jsx'
@@ -40,6 +41,7 @@ export default function Agents() {
             <AgentTable agents={agents} />
           </>
         )}
+        <AiCostTables byAgent={page.data?.ai_costs} byModel={page.data?.ai_models} />
         <AgentCardGrid cards={cards} error={cardError} />
       </div>
     </PageState>

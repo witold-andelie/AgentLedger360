@@ -26,6 +26,7 @@ frontend/
     ├── main.jsx          # 挂载 + LanguageProvider（不要改）
     ├── App.jsx           # shell：header、tab、语言切换（只在这里加/删页面）
     ├── api.js            # 唯一调用后端的地方 + 金额/百分比格式化 fmt
+    ├── agentRound.jsx    # 全局共享的后台交易回合（交易大厅 + 智能体控制台共用，一次只跑一轮）
     ├── i18n.jsx          # useT() -> { t, lang, setLang }
     ├── translations.js   # ZH 表：key = 英文原文
     ├── index.css         # token + shell + 组件样式块

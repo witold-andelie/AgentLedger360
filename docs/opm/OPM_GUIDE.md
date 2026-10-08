@@ -104,7 +104,13 @@ In-zoom 图中过程**自上而下 = 时间顺序**（用不可见边固定排�
 - dim_agents and fact_orders feed KPI Views (`v_customer_360`, `v_agent_performance`, `v_daily_kpis`, `v_customer_rfm`).
 - **Checking Data Quality** requires fact_orders and Core OLTP tables (reconciliation); yields DQ Result at *PASS* or *FAIL* (x9).
 - **Serving API** requires KPI Views and DQ Result; yields API JSON.
-- Viewer handles **Rendering Dashboard**, which requires API JSON and yields React Pages.
+- Viewer handles **Rendering Dashboard**, which requires API JSON and Shared Round State and yields React Pages
+  (Market with AI-spend KPIs, Agent Console with live trace and cost, Agents with AI cost tables, Customer 360,
+  Data quality).
+- Viewer handles **Running Round in Background**, which yields Background Round Job at *running*, then
+  *completed* or *failed*; a completed job invokes the pipeline (Ingesting Events ...).
+- **Polling Round** requires Background Round Job at *running* and affects Shared Round State, so a round started
+  on Market is the same round the Agent Console shows.
 
 ### SD5 — Agent Reasoning (unfolded; used by Buyer Agent in SD1 and Guardian in SD2)
 - **Planning** requires Goal and LLM Provider; yields Message History and Agent Run Report at *running*.
@@ -129,7 +135,9 @@ In-zoom 图中过程**自上而下 = 时间顺序**（用不可见边固定排�
 - **Merging** occurs if Compat Gate is *green*; yields GitHub main branch.
 - **Building Image** yields Container Image; **Deploying** yields Render Web Service at *asleep*.
 - **Warming Up** changes Render Web Service from *asleep* to *awake*.
-- Presenter handles **Presenting Demo**, which occurs if Render Web Service is *awake*.
+- Presenter handles **Presenting Demo**, which occurs if Render Web Service is *awake* and requires Demo Data at *fresh*.
+- Presenter handles **Resetting Demo**, which requires Admin Token (only if one is set) and changes Demo Data from
+  *used* to *fresh* (all rows wiped, sellers re-registered, buyer refilled to $30).
 
 ---
 
@@ -156,6 +164,10 @@ In-zoom 图中过程**自上而下 = 时间顺序**（用不可见边固定排�
 | Token Meter / Budget / Agent Run Report (SD5) | 对象 | `agents/accounting.py`, `agents/telemetry.py`, `sql/003_agents.sql` | A |
 | Building AI cost facts (SD3) | 过程 | `sql/marts/fact_llm_calls.sql`, 视图 `v_ai_cost_by_agent/model` | B |
 | Agent Console 页面 | — | `frontend/src/pages/AgentConsole.jsx`（规则 §11） | 前端负责人 |
+| Running Round in Background / Background Round Job (SD3) | 过程 / 对象 | `server.py` `/api/agent/rounds` | A |
+| Polling Round / Shared Round State (SD3) | 过程 / 对象 | `frontend/src/agentRound.jsx` | 前端负责人 |
+| AI 成本页面元素 | — | `components/KpiRow.jsx`、`components/AiCostTables.jsx` | 前端负责人 |
+| Resetting Demo / Demo Data / Admin Token (SD4) | 过程 / 对象 | `server.py` `/api/demo/reset`、`db.wipe_all`、`components/ResetDemoButton.jsx` | A |
 | Emitting Events | 过程 | `db.emit_event` | A |
 | Market round orchestration | 过程 | `runner.py`（CLI `demo.py`，Web `server.py /api/round`） | A |
 | Ingesting / Building / DQ / Logging | 过程 | `analytics/ingest.py`, `analytics/pipeline.py`, `sql/marts/*`, `sql/quality_checks.sql` | B |
@@ -192,12 +204,8 @@ In-zoom 图中过程**自上而下 = 时间顺序**（用不可见边固定排�
 
 ---
 
-## 5. 已知缺口（接手可直接领取）
+## 5. 已知缺口与待办
 
-| 缺口 | OPM 位置 | 建议实现 |
-|---|---|---|
-| 价格协商（最多 3 轮） | SD1 Quoting 与 Holding 之间 | 新过程 *Negotiating*：LLM 可提议还价，策略决定（R1） |
-| 真实支付通道 | SD Money | 在 `ledger.post` 外加 `PaymentRail` 接口（Stripe test / x402 testnet） |
-| Kafka / Airflow | SD3 Ingesting / pipeline | `ingest.py` 换 Kafka consumer；`pipeline.TASKS` 1:1 映射成 Airflow DAG |
-
-新增任何一项时：先在 DOT 中加过程/状态与 `[R…]` 标签，再写代码，再补第 2–4 节。
+**单一来源是仓库根目录的 `progress.md`**（第 2.3 节是现存信任漏洞 A1–A4，第 5 节是带设计、文件和验收标准的待办 T1–T20）。
+计划中的过程（能力开关、清算所转交交付、攻防演示、哈希链审计、有界学习器、提示词注入防护、事后结果核验、人工复核、
+支付通道接口等）**还没有**画进 OPM：哪一项落地，就在同一个提交里把它加进 DOT 和本指南，然后重新渲染。

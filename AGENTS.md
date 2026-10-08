@@ -4,6 +4,11 @@ AgentLedger 360: AI agents discover, pay for (HTTP 402 + escrow), verify and dis
 services; every state change is an outbox event feeding a SQL warehouse (Customer 360, agent reliability,
 data quality). Hackathon project, half-day budget, two developers on two laptops.
 
+## 0. Current state and backlog
+- `progress.md` (repo root) is the live status: what works, what is verified, the open trust holes, and the
+  prioritized backlog (T1-T20) with designs, files and acceptance criteria. Read it first; update it in the
+  same commit as your change (rules in its section 7).
+
 ## 1. The system model is the map
 - `docs/opm/agentledger_opm.dot` (render: `python scripts/render_opm.py`) is the OPM model of the whole system.
   Read SD, then follow the in-zoom edges: SD1 trade -> SD2 dispute -> SD3 analytics -> SD4 dev/deploy;

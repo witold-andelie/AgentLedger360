@@ -257,3 +257,7 @@ tr.selected td { background: var(--primary-glow); }
 /* ── ResetDemoButton ── */
 .reset-demo { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; min-width: 0; }
 .reset-demo .form-error { margin-top: 0; }
+
+/* ── Round progress (Market) / AI cost tables ── */
+.round-progress { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-top: 10px; }
+.subhead { margin-top: 20px; }
