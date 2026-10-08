@@ -1,5 +1,8 @@
 # Private planning doc: keep local only, never push
 AgentLedger360_Case02_Architecture_Python311_313.md
+# Local agent config: never push
+CLAUDE.md
+.claude/
 
 __pycache__/
 *.pyc
