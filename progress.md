@@ -128,7 +128,7 @@ sh scripts/check_compat.sh                                            # macOS/Li
 | T14 | Claude / DeepSeek 实测 | P2 | S | ⏸ | 2026-10-08 决定不做，只用 Mistral |
 | T15 | 双机模式真实网络测试 | P2 | S | ⬜ | 两台机器 `AL_PAYMENT_SECRET` 一致 |
 | T16 | 公私钥签名（Ed25519） | P2 | M | ✅ | 2026-10-08，`cryptography`；密钥仍由共享口令派生，校验只用公钥 |
-| T24 | 真 Kafka（Redpanda） | P2 | M | ⬜ | 可选；只在本地演示 |
+| T24 | 真 Kafka（Redpanda） | P2 | M | ⏸ | 2026-10-08 决定不做；继续用发件箱轮询 |
 | T25 | 持久化存储 | P2 | M | ⬜ | 可选；黑客松用不到 |
 | T17 | OPM 补齐 | P3 | S | 🟡 | 重置演示、后台回合已画；其余随 T1–T10 补 |
 | T18 | 演示材料（幻灯片、讲稿、备用录屏） | P3 | M | ⬜ | — |
@@ -262,7 +262,7 @@ sh scripts/check_compat.sh                                            # macOS/Li
 - **T14 Claude / DeepSeek 实测 · S** ⏸ 2026-10-08：不做。项目只用 Mistral。
 - **T15 双机模式真实网络测试 · S**：笔记本 B 用 `AL_ROLE=sellers` 和 `AL_SELLER_PUBLIC_URL=http://<B 的地址>:8002`，A 用 `AL_SELLER_URL` 指过去；两台机器的 `AL_PAYMENT_SECRET` 必须一致；记得在 Windows 防火墙放行端口。Render 上的第二个卖方服务已于 2026-10-08 删除；如需线上双服务演示，按 `render.yaml` 末尾注释重新加一个服务（会多一个需要唤醒的免费实例）。
 - **T16 公私钥签名 · M** ✅ 2026-10-08：支付凭证和交付哈希改为 Ed25519（`cryptography`，3.11/3.13 都有 wheel）。私钥由 `AL_PAYMENT_SECRET` 经 HKDF 派生，所以两台电脑不用另传密钥文件；校验只需要公钥，`GET /platform/.well-known/receipt-key`。交付密钥按卖方 id 派生。
-- **T24 真 Kafka（可选）· M**：目前**没有用 Kafka**，用的是「事务性发件箱 + 游标轮询」，约定与 Kafka 消费者相同（见 `analytics/ingest.py`）。如需展示真 Kafka：
+- **T24 真 Kafka（可选）· M** ⏸ 2026-10-08：决定不做。继续用 `analytics/ingest.py` 的发件箱轮询（按 seq、按 event_id 去重）。下面的设计留作记录，不再排期：
   1. 在 `deploy/compose.kafka.yml` 里用 Redpanda（单容器，比 Kafka 轻）；
   2. 新增 `events/publisher.py`：轮询 `outbox` 把新事件发到主题 `agent-economy.events`（key = `aggregate_id`），并记录已发布的 seq；
   3. `analytics/ingest.py` 抽象成 `EventSource` 接口，保留现在的轮询为默认，新增 `KafkaEventSource`（`confluent-kafka`，需确认 3.11/3.13 都有 wheel，写进可选依赖 `.[kafka]`）；
@@ -322,4 +322,5 @@ sh scripts/check_compat.sh                                            # macOS/Li
 | 2026-10-08 | `eb4fc14` | 完成 T11：支付通道接口。默认模拟账本；`stripe-test` 仅接受 `sk_test_` 密钥，把托管映射成手动捕获的 PaymentIntent。界面显示当前通道。未花 API 费用，也没有调用真实 Stripe。 |
 | 2026-10-08 | `8d604af` | 完成 T12：报价后最多还价 3 轮，卖方底价为标价的 80%，超过钱包授权的出价被工具拒绝。规则买方不还价。未花 API 费用。 |
 | 2026-10-08 | `1ad1f89` | 完成 T13：研究短评卖方 `res-note`。立场由磁带决定，LLM 只写文字；无模型时用确定性短评。验收失败包括立场不符和短评不合格。未花 API 费用。 |
-| 2026-10-08 | 本次提交 | T14 明确不做（只用 Mistral）。完成 T16：支付凭证和交付签名改为 Ed25519，校验只用公钥。未花 API 费用。T15 需要两台电脑，T24/T25 仍是可选项。 |
+| 2026-10-08 | `37e8585` | T14 明确不做（只用 Mistral）。完成 T16：支付凭证和交付签名改为 Ed25519，校验只用公钥。未花 API 费用。T15 需要两台电脑，T24/T25 仍是可选项。 |
+| 2026-10-08 | 本次提交 | T24 真 Kafka 决定不做。数仓继续用发件箱轮询。未改代码。 |
