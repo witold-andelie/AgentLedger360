@@ -56,7 +56,42 @@ def evaluate(deliverable: Deliverable, criteria: AcceptanceCriteria) -> QualityR
         if criteria.min_rank_ic is not None:
             checks.append(CheckResult(name="rank_ic", critical=False, passed=result.rank_ic >= criteria.min_rank_ic,
                                       detail=f"{result.rank_ic:.3f} vs min {criteria.min_rank_ic}"))
+
+    if deliverable.capability == Capability.RESEARCH or criteria.min_note_chars is not None:
+        _research_checks(checks, df, deliverable, criteria)
     return _report(checks, metrics)
+
+
+def _research_checks(checks: list[CheckResult], df: pd.DataFrame, deliverable: Deliverable,
+                     criteria: AcceptanceCriteria) -> None:
+    """A research note is one row. The stance must match the tape; the prose must name the symbol."""
+    from agentledger.market.research_note import expected_stance
+
+    one_row = len(df) == 1
+    checks.append(CheckResult(name="one_row", critical=True, passed=one_row, detail=f"{len(df)} rows"))
+    if not one_row or "symbol" not in df.columns or "stance" not in df.columns or "note" not in df.columns:
+        return
+    row = df.iloc[0]
+    symbol_ok = str(row["symbol"]).upper() == deliverable.symbol.upper()
+    checks.append(CheckResult(name="symbol", critical=True, passed=symbol_ok,
+                              detail=f"{row['symbol']} vs {deliverable.symbol}"))
+    stance = str(row["stance"])
+    vocab_ok = stance in ("LONG", "FLAT")
+    checks.append(CheckResult(name="stance_vocab", critical=True, passed=vocab_ok, detail=stance))
+    expected = expected_stance(deliverable.symbol, deliverable.as_of)
+    checks.append(CheckResult(name="stance_matches_tape", critical=True, passed=stance == expected,
+                              detail=f"{stance} vs tape {expected}"))
+    note = str(row["note"])
+    lo = criteria.min_note_chars or 40
+    hi = criteria.max_note_chars or 400
+    length_ok = lo <= len(note) <= hi
+    checks.append(CheckResult(name="note_length", critical=True, passed=length_ok,
+                              detail=f"{len(note)} chars, need {lo}-{hi}"))
+    mentions = deliverable.symbol.upper() in note.upper()
+    checks.append(CheckResult(
+        name="note_mentions_symbol", critical=True, passed=mentions,
+        detail="ok" if mentions else "missing",
+    ))
 
 
 def _report(checks: list[CheckResult], metrics: dict[str, float]) -> QualityReport:

@@ -19,6 +19,7 @@ class Capability(StrEnum):
     PRICES = "market.prices"            # OHLCV feed           (zoomcamp M1)
     FEATURES = "market.features"        # engineered features  (zoomcamp M2)
     SIGNAL_5D = "signal.direction.5d"   # 5-day up/down signal (zoomcamp M3)
+    RESEARCH = "market.research"        # one-row commentary; the stance is checked against the tape
 
 
 class OrderStatus(StrEnum):
@@ -102,6 +103,8 @@ class AcceptanceCriteria(BaseModel):
     max_staleness_days: int = 7
     min_hit_rate: float | None = None  # signals only
     min_rank_ic: float | None = None   # signals only (IC idea from alpha-research repos)
+    min_note_chars: int | None = None  # research notes only
+    max_note_chars: int | None = None
 
 
 class PaymentRequired(BaseModel):

@@ -151,6 +151,7 @@ In an in-zoomed diagram, processes **from top to bottom = time order** (the orde
 | Registry / Reputation | object | `economy/registry.py`, `core.agents` | A |
 | Survival Tier / Buyer Agent | object | `agents/buyer.py` | A |
 | Negotiating a quote | process | `sellers/app.py` `POST /quotes/{id}/counter`, at most 3 rounds, floor is 80% of list price | A |
+| Research note seller | object | `res-note` in `sellers/catalog.py`, `market/research_note.py`, acceptance in `market/quality.py` | B |
 | Seller Agents | object | `sellers/catalog.py` (B), `sellers/app.py` (A: 402 paywall) | A/B |
 | Price Oracle | environmental object | `market/data.py` | B |
 | Acceptance Criteria / Verifying | object / process | `market/quality.py`, `market/backtest.py` | B |
