@@ -125,9 +125,9 @@ sh scripts/check_compat.sh                                            # macOS/Li
 | T11 | 支付通道接口（场景二） | P2 | M–L | ✅ | 2026-10-08，默认模拟账本；Stripe 仅测试密钥。x402 未做 |
 | T12 | 价格协商 | P2 | M | ✅ | 2026-10-08，最多 3 轮，底价为标价的 80% |
 | T13 | LLM 卖方 | P2 | M | ✅ | 2026-10-08，`res-note`；无模型时用确定性短评 |
-| T14 | Claude / DeepSeek 实测 | P2 | S | ⬜ | 需要对应 key |
+| T14 | Claude / DeepSeek 实测 | P2 | S | ⏸ | 2026-10-08 决定不做，只用 Mistral |
 | T15 | 双机模式真实网络测试 | P2 | S | ⬜ | 两台机器 `AL_PAYMENT_SECRET` 一致 |
-| T16 | 公私钥签名（Ed25519） | P2 | M | ⬜ | — |
+| T16 | 公私钥签名（Ed25519） | P2 | M | ✅ | 2026-10-08，`cryptography`；密钥仍由共享口令派生，校验只用公钥 |
 | T24 | 真 Kafka（Redpanda） | P2 | M | ⬜ | 可选；只在本地演示 |
 | T25 | 持久化存储 | P2 | M | ⬜ | 可选；黑客松用不到 |
 | T17 | OPM 补齐 | P3 | S | 🟡 | 重置演示、后台回合已画；其余随 T1–T10 补 |
@@ -259,9 +259,9 @@ sh scripts/check_compat.sh                                            # macOS/Li
 - **T11 支付通道接口（组织方场景二）· M–L** ✅ 2026-10-08：`economy/rails.py` 的 `PaymentRail`（`hold` / `capture` / `release` / `refund`）。默认 `SimulatedLedgerRail`，托管、结算、取消、退款都走它。`AL_PAYMENT_RAIL=stripe-test` 且 `STRIPE_TEST_SECRET_KEY` 以 `sk_test_` 开头时用 `StripeTestRail`（PaymentIntent `capture_method=manual`：授权=托管、capture=结算、cancel=放回、部分退款=只捕获剩余）。拒绝 live key。界面在智能体控制台显示当前通道。x402 测试网仍未做。
 - **T12 价格协商 · M** ✅ 2026-10-08：报价和托管之间可还价，最多 3 轮。卖方底价是标价的 80%，第 3 轮给到底价，第 4 轮关闭。买方工具拒绝超过钱包授权的出价；清算所 hold 仍按最终报价扣款。规则买方不还价，演示剧本不变。
 - **T13 LLM 卖方 · M（可选）** ✅ 2026-10-08：卖方 `res-note`（能力 `market.research`）走 402。交付一行 `date/symbol/stance/note`。立场由行情磁带决定（5 个交易日前的收盘对比），模型只能写短评，不能改立场。无模型时用确定性短评，测试不花钱。立场与磁带不符、短评没写代码或长度不合，都是关键验收失败。
-- **T14 Claude / DeepSeek 实测 · S**：有 key 时各跑一轮，记录费用；Claude 默认模型是 `claude-opus-5-5`，带服务端拒答回退参数（尚未实测）。
+- **T14 Claude / DeepSeek 实测 · S** ⏸ 2026-10-08：不做。项目只用 Mistral。
 - **T15 双机模式真实网络测试 · S**：笔记本 B 用 `AL_ROLE=sellers` 和 `AL_SELLER_PUBLIC_URL=http://<B 的地址>:8002`，A 用 `AL_SELLER_URL` 指过去；两台机器的 `AL_PAYMENT_SECRET` 必须一致；记得在 Windows 防火墙放行端口。Render 上的第二个卖方服务已于 2026-10-08 删除；如需线上双服务演示，按 `render.yaml` 末尾注释重新加一个服务（会多一个需要唤醒的免费实例）。
-- **T16 公私钥签名 · M**：把支付凭证和交付签名从共享 HMAC 换成 Ed25519（`cryptography` 包，需确认 3.11/3.13 都有 wheel）。
+- **T16 公私钥签名 · M** ✅ 2026-10-08：支付凭证和交付哈希改为 Ed25519（`cryptography`，3.11/3.13 都有 wheel）。私钥由 `AL_PAYMENT_SECRET` 经 HKDF 派生，所以两台电脑不用另传密钥文件；校验只需要公钥，`GET /platform/.well-known/receipt-key`。交付密钥按卖方 id 派生。
 - **T24 真 Kafka（可选）· M**：目前**没有用 Kafka**，用的是「事务性发件箱 + 游标轮询」，约定与 Kafka 消费者相同（见 `analytics/ingest.py`）。如需展示真 Kafka：
   1. 在 `deploy/compose.kafka.yml` 里用 Redpanda（单容器，比 Kafka 轻）；
   2. 新增 `events/publisher.py`：轮询 `outbox` 把新事件发到主题 `agent-economy.events`（key = `aggregate_id`），并记录已发布的 seq；
@@ -321,4 +321,5 @@ sh scripts/check_compat.sh                                            # macOS/Li
 | 2026-10-08 | `5b6abe0` | 完成 T10：退款比例在区间边缘、买方被驳回超过 2 次、或金额超过 `AL_CAP_HUMAN_REVIEW_ABOVE_MINOR` 时订单停在 DISPUTED，等运营令牌裁决。越界裁决不动钱。数据质量页有待复核面板。未花 API 费用。 |
 | 2026-10-08 | `eb4fc14` | 完成 T11：支付通道接口。默认模拟账本；`stripe-test` 仅接受 `sk_test_` 密钥，把托管映射成手动捕获的 PaymentIntent。界面显示当前通道。未花 API 费用，也没有调用真实 Stripe。 |
 | 2026-10-08 | `8d604af` | 完成 T12：报价后最多还价 3 轮，卖方底价为标价的 80%，超过钱包授权的出价被工具拒绝。规则买方不还价。未花 API 费用。 |
-| 2026-10-08 | 本次提交 | 完成 T13：研究短评卖方 `res-note`。立场由磁带决定，LLM 只写文字；无模型时用确定性短评。验收失败包括立场不符和短评不合格。未花 API 费用。 |
+| 2026-10-08 | `1ad1f89` | 完成 T13：研究短评卖方 `res-note`。立场由磁带决定，LLM 只写文字；无模型时用确定性短评。验收失败包括立场不符和短评不合格。未花 API 费用。 |
+| 2026-10-08 | 本次提交 | T14 明确不做（只用 Mistral）。完成 T16：支付凭证和交付签名改为 Ed25519，校验只用公钥。未花 API 费用。T15 需要两台电脑，T24/T25 仍是可选项。 |

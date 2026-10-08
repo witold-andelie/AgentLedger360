@@ -8,7 +8,7 @@ which produces Customer 360, agent reliability, and data-quality reports.
 | Review requirement (Case 02) | Our implementation |
 |---|---|
 | Agent-to-agent discovery | `/.well-known/agents.json` agent card + a registry ranked by reputation − price |
-| Payments | HTTP 402 quote → escrow → HMAC receipt as the `X-Payment` header → delivery |
+| Payments | HTTP 402 quote → escrow → Ed25519 receipt as the `X-Payment` header → delivery |
 | Wallets | Double-entry ledger, one wallet per agent, spend authorization (per-transaction / daily limits), survival tiers |
 | Dispute resolution | The arbiter recomputes the hash and re-runs acceptance; a rule table decides full refund / partial refund / rejection |
 | "And more" | Reputation moves with outcomes, an event-sourced warehouse, 9 data-quality and reconciliation checks, and the LLM only explains — it never moves money |

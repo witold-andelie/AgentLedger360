@@ -906,7 +906,7 @@
 <text xml:space="preserve" text-anchor="start" x="2301.88" y="-1768.32" font-family="Helvetica,sans-Serif" font-size="10.00">Spend mandate (max/order, daily) checked before debit; survival tier caps price</text>
 <text xml:space="preserve" text-anchor="start" x="3065.88" y="-1768.32" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#607d8b">escrow.hold, agents/buyer.py::TIERS</text>
 <text xml:space="preserve" text-anchor="start" x="2275.88" y="-1749.57" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">R7</text>
-<text xml:space="preserve" text-anchor="start" x="2301.88" y="-1748.32" font-family="Helvetica,sans-Serif" font-size="10.00">Seller executes the QUOTED task; verifies HMAC receipt, amount, quote ownership; HMAC&#45;signs content_hash (platform verifies before the delivery transition)</text>
+<text xml:space="preserve" text-anchor="start" x="2301.88" y="-1748.32" font-family="Helvetica,sans-Serif" font-size="10.00">Seller executes the QUOTED task; verifies the Ed25519 receipt, amount, quote ownership; Ed25519&#45;signs content_hash (platform verifies before the delivery transition)</text>
 <text xml:space="preserve" text-anchor="start" x="3065.88" y="-1748.32" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#607d8b">sellers/app.py::task, receipts.sign_content, escrow.mark_delivered</text>
 <text xml:space="preserve" text-anchor="start" x="2275.88" y="-1729.57" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">R8</text>
 <text xml:space="preserve" text-anchor="start" x="2301.88" y="-1728.32" font-family="Helvetica,sans-Serif" font-size="10.00">Adjudicator trusts nobody: re&#45;hash evidence, re&#45;run acceptance checks</text>

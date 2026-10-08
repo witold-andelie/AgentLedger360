@@ -134,7 +134,7 @@ class PaymentReceipt(BaseModel):
     buyer_agent_id: str
     seller_agent_id: str
     amount_minor: int
-    signature: str  # HMAC over the fields above, see economy.receipts
+    signature: str  # Ed25519 over the fields above, see economy.receipts
 
 
 # ---------------------------------------------------------------- delivery & verification

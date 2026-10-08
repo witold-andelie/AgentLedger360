@@ -12,6 +12,7 @@ dependencies = [
     "httpx>=0.27",
     "numpy>=2.1",       # first release with 3.13 wheels
     "pandas>=2.2.3",    # first release with 3.13 wheels
+    "cryptography>=44", # Ed25519 receipts; wheels exist for 3.11 and 3.13
 ]
 
 [project.optional-dependencies]

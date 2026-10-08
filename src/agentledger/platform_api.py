@@ -76,6 +76,10 @@ def create_app(settings: Settings | None = None, operator_token: str = "",
     def integrity_error(_: Request, exc: sqlite3.IntegrityError) -> JSONResponse:
         return JSONResponse(status_code=409, content={"detail": f"integrity: {exc}"})
 
+    @app.get("/.well-known/receipt-key")
+    def receipt_key() -> dict[str, str]:
+        return {"alg": "Ed25519", "public_key": receipts.receipt_public_b64(s.payment_secret)}
+
     @app.get("/health")
     def health() -> dict[str, str]:
         return {"status": "ok"}

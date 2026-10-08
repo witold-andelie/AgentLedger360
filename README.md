@@ -145,6 +145,7 @@ matrix run the suite on both. Rules: no PEP 695 syntax, no `sqlite3.connect(auto
 
 ## Honest limits
 
-Simulated money; HMAC receipts (shared secret) instead of asymmetric signatures; delivery hashes are seller-signed
-HMAC (per-seller key derived from the shared secret); SQLite instead of PostgreSQL/Kafka/Airflow (the outbox, cursor and DAG
+Simulated money. Receipts and delivery hashes are Ed25519. The keys are derived from the shared
+`AL_PAYMENT_SECRET` so both laptops match without copying a key file; verification needs only the public key
+(`GET /platform/.well-known/receipt-key`). SQLite instead of PostgreSQL/Kafka/Airflow (the outbox, cursor and DAG
 keep the same contracts so they can be swapped). No integration with any SAP product is claimed.
