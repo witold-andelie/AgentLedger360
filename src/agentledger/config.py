@@ -48,7 +48,25 @@ class Settings:
         return self.var_dir / "cache"
 
 
+def _load_dotenv() -> None:
+    """Fill missing environment variables from a local .env. Never overrides the process environment."""
+    for candidate in (Path.cwd() / ".env", Path(__file__).resolve().parents[2] / ".env"):
+        if not candidate.is_file():
+            continue
+        for raw in candidate.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+        return
+
+
 def load_settings() -> Settings:
+    _load_dotenv()
     return Settings(
         var_dir=Path(os.getenv("AL_VAR_DIR", "var")).resolve(),
         payment_secret=os.getenv("AL_PAYMENT_SECRET", "dev-secret-change-me"),

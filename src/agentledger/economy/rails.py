@@ -79,7 +79,9 @@ class StripeTestRail:
     def hold(self, conn: sqlite3.Connection, order_id: str, buyer_wallet: str, amount_minor: int) -> None:
         body = self._post(self._secret, "/payment_intents", {
             "amount": amount_minor, "currency": "usd", "capture_method": "manual", "confirm": "true",
-            "payment_method": "pm_card_visa", "payment_method_types[]": "card",
+            "payment_method": "pm_card_visa",
+            "automatic_payment_methods[enabled]": "true",
+            "automatic_payment_methods[allow_redirects]": "never",
             "metadata[order_id]": order_id,
         })
         external_id = str(body.get("id") or "")

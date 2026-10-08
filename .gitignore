@@ -12,5 +12,6 @@ __pycache__/
 var/
 data/cache/
 .env
+_scratch/
 *.egg-info/
 dist/
