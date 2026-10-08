@@ -100,9 +100,11 @@ Allow the port through Windows Firewall on laptop B.
 ## Deploy on Render
 
 `render.yaml` is a Blueprint (Docker runtime, free plan, Frankfurt): Render dashboard -> New -> Blueprint.
-Service `agentledger` works alone (sellers in-process). The optional `agentledger-sellers` service runs the
-same image with `AL_ROLE=sellers`; point `AL_SELLER_URL` at it to make agents pay each other over the internet.
-Free instances sleep after ~15 min: open `/api/health` before presenting. SQLite resets on every deploy.
+It creates one service, `agentledger`, that runs everything (dashboard, API, clearing house, AI agents, in-process
+sellers). Its URL may carry a random suffix (`agentledger.onrender.com` belongs to an unrelated project), so copy
+the real one from the service page. Free instances sleep after ~15 min: open `/api/health` before presenting.
+SQLite resets on every deploy, and every push to `main` redeploys. Two-host mode (sellers on a second service with
+`AL_ROLE=sellers`) is optional and not deployed; see the comments in `render.yaml`.
 
 ## Repository map
 

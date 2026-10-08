@@ -1,17 +1,19 @@
 # Render Blueprint - https://render.com/docs/blueprint-spec
 # Deploy: Render dashboard -> New -> Blueprint -> pick this repo.
 #
-# Service 1 (agentledger) works on its own: dashboard + API + clearing house + in-process sellers.
-# Service 2 (agentledger-sellers) is optional: the same image with AL_ROLE=sellers, so the buyer pays
-# sellers over the public internet. To switch it on, set AL_SELLER_URL on service 1 to service 2's URL
-# and AL_SELLER_PUBLIC_URL on service 2 to its own URL (free instances cannot use the private network).
-# Free plan notes: services sleep after ~15 min idle (open both URLs before the pitch); disk is ephemeral,
-# so the SQLite ledger resets on every deploy/restart - fine for a demo.
+# One web service does everything: dashboard + API + clearing house + AI agents + in-process sellers.
+# Its onrender.com URL may carry a random suffix (agentledger.onrender.com belongs to another project) -
+# copy the real URL from the service page.
+# Free plan notes: the service sleeps after ~15 min idle (open /api/health before the pitch); the disk is
+# ephemeral, so the SQLite ledger resets on every deploy/restart - fine for a demo. Pushing to main redeploys.
+#
+# Two-host mode (optional, not deployed): run a second service from the same image with AL_ROLE=sellers and
+# AL_SELLER_PUBLIC_URL=<its own URL>, then set AL_SELLER_URL on this service to that URL.
 
 envVarGroups:
   - name: agentledger-shared
     envVars:
-      - key: AL_PAYMENT_SECRET      # sellers verify receipts signed by the clearing house
+      - key: AL_PAYMENT_SECRET      # receipts are signed and verified with this
         generateValue: true
       - key: AL_DATA_SOURCE
         value: synthetic
@@ -29,10 +31,10 @@ services:
       - fromGroup: agentledger-shared
       - key: AL_ROLE
         value: all
-      - key: AL_SELLER_URL          # leave empty = in-process sellers; else https://agentledger-sellers.onrender.com/
+      - key: AL_SELLER_URL          # leave empty: sellers run in-process (only set it for two-host mode)
         sync: false
       # AI agents (buyer + guardian). Without a key the service falls back to the rule-based agents.
-      - key: AL_AGENT_MODE
+      - key: AL_AGENT_MODE          # set to "rule" between demos so public visitors cannot spend LLM credit
         value: auto
       - key: AL_LLM_PROVIDER        # mistral | anthropic | openai_compat
         value: mistral
@@ -42,18 +44,3 @@ services:
         value: "0.50"
       - key: AL_ADMIN_TOKEN         # required by the "Reset demo" button on the public URL (see it in the dashboard)
         generateValue: true
-
-  - type: web
-    name: agentledger-sellers
-    runtime: docker
-    plan: free
-    region: frankfurt
-    dockerfilePath: ./Dockerfile
-    healthCheckPath: /health
-    autoDeploy: true
-    envVars:
-      - fromGroup: agentledger-shared
-      - key: AL_ROLE
-        value: sellers
-      - key: AL_SELLER_PUBLIC_URL   # this service's own URL, e.g. https://agentledger-sellers.onrender.com
-        sync: false
